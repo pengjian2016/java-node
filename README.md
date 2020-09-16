@@ -21,8 +21,7 @@
 # 目录
 1. java篇
    - 基础内容
-
-     [x] [ClassLoader 和 Class.forName() 的区别]( java基础 / java基础_classloader&classforname.md)
+     - [ClassLoader 和 Class.forName() 的区别]( https://gitee.com/javajov/java-senior-engineer-interview/blob/master/java%E5%9F%BA%E7%A1%80/java%E5%9F%BA%E7%A1%80_classloader&classforname.md)
 
    - 集合模块
    - 同步，并发等

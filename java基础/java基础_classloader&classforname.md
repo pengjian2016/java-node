@@ -84,7 +84,7 @@ static 代码块
 -----结束loadClass-------
 ```
 
-我们看一下Class.forName()方法的源码：
+看一下Class.forName()方法的源码：
 
 
 ```

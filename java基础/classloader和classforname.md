@@ -21,9 +21,9 @@
 
 ### ClassLoader 和 Class.forName() 他们都能加载类，有什么不同？
 
-ClassLoader只是将class文件加载到内存中，不进行其他操作，即只执行了类的加载阶段
+ClassLoader只是将class加载到内存中，不进行其他操作，即只执行了类的加载阶段
 
-Class.forName() 除了将class文件加载到内存中，同时还会对类进行解释，执行类中的static块，并且进行静态变量的初始化。也就是说Class.forName() 执行了类的加载，验证，准备，解析和初始化的过程。
+Class.forName() 除了将class加载到内存中，同时还会对类进行解释，执行类中的static块，并且进行静态变量的初始化。也就是说Class.forName() 执行了类的加载，验证，准备，解析和初始化的过程。
 
 > 注：Class.forName重载的另外一个方法，可以指定是否进行初始化，如果指定为不初始化，则本质上与ClassLoader一样
 

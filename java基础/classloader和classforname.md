@@ -19,7 +19,7 @@
 
 
 
-#### ClassLoader 和 Class.forName() 他们都能加载类，有什么不同？
+### ClassLoader 和 Class.forName() 他们都能加载类，有什么不同？
 
 ClassLoader只是将class文件加载到内存中，不进行其他操作，即只执行了类的加载阶段
 

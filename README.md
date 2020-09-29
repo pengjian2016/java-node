@@ -56,14 +56,15 @@
      - 集群
 
    - redis
-     - redis 数据类型，
+     - redis 数据类型及使用场景，布隆过滤器
      - 单线程速度快的原因、持久化机制（RDB、AOF），数据库缓存一致性问题
      - 内存淘汰机制（LRU，LFU）
      - 缓存穿透、缓存雪崩、缓存击穿
+     - redis 分布式锁，锁的续期问题（redisson）
      - 主从模式、哨兵模式、集群模式（cluster）
      
    - elasticsearch
-     - 文档检索和写入过程
+     - 文档检索和写入过程，删除或更新过程
      - 支持的类型，倒排序索引原理
      - 深度分页
      - 集群
@@ -86,6 +87,8 @@
    - spring cloud
      - 组件，核心原理
      - 与dubbo对比
+   - hystrix/sentinel
+     - 熔断、限流、降级
 5. 算法篇
    - LRU 算法
    - 回文字符串判断
@@ -94,6 +97,7 @@
    - Http，https，tcp，udp
    - tcp如何保证可靠性
    - tcp粘包问题
+
 7. 其他
    - linux 常用命令
    - netty

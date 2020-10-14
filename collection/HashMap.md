@@ -1,9 +1,6 @@
-| 序号 | 内容          | 最后修改时间              |
-|----|-------------|---------------------|
-| 1  | 增加hashmap内容 | 2020年09月18日10:55:20 |
-<br>
+## HashMap与HashSet
 
-#### HashMap 面试重点
+### HashMap 面试重点
 如果问到Java基础知识，百分之90的情况都会问到HashMap，可见它的重要性，面试过程中无外乎以下三点：
 
 1. put 过程
@@ -44,7 +41,7 @@ if (++size > threshold)
 [HashMap初始容量为什么是2的n次幂及扩容为什么是2倍的形式](/https://blog.csdn.net/Apeopl/article/details/88935422)
 
 
-### 其他
+#### 其他
 
 ##### HashMap是线程安全的吗？
 
@@ -54,3 +51,30 @@ if (++size > threshold)
 
 1.8之前，rehash可能会造成循环链表，导致死循环问题，1.8之后已经修复，但是仍然会有其他问题：
 多线程put的时候可能导致元素丢失，主要问题出在addEntry方法的new Entry<K,V>(hash, key, value, e)，如果两个线程都同时取得了e,则他们下一个元素都是e，然后赋值给数组元素的时候有一个成功有一个丢失。
+
+
+### HashSet
+
+HashSet 存放无序不重复的元素，为什么无序？为什么不重复？
+
+查看HashSet源码这一切都能够很好理解了：
+
+```
+
+private transient HashMap<E,Object> map;
+
+private static final Object PRESENT = new Object();
+
+public boolean add(E e) {
+    return map.put(e, PRESENT)==null;
+}
+
+```
+
+在它的内部,实际上是维护了一个HashMap的变量作为它的存储结构
+
+当我们添加元素的时候是把元素作为HashMap的key值，添加到Map中去
+
+无序因为是字典结构，自然是武学的
+
+不重复因为Map中不会有key值相等的元素。

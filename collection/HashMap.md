@@ -46,11 +46,11 @@ if (++size > threshold)
 
 ### 其他
 
-HashMap是线程安全的吗？
+##### HashMap是线程安全的吗？
 
 不是，多线程情况下推荐使用ConcurrentHashMap
 
-HashMap多线程情况下会有什么问题
+##### HashMap多线程情况下会有什么问题
 
 1.8之前，rehash可能会造成循环链表，导致死循环问题，1.8之后已经修复，但是仍然会有其他问题：
 多线程put的时候可能导致元素丢失，主要问题出在addEntry方法的new Entry<K,V>(hash, key, value, e)，如果两个线程都同时取得了e,则他们下一个元素都是e，然后赋值给数组元素的时候有一个成功有一个丢失。

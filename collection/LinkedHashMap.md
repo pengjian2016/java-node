@@ -196,4 +196,16 @@ third=3
 ```
 
 
-#### LinkedHashSet 继承自 HashSet
+#### LinkedHashSet 
+
+LinkedHashSet 继承自 HashSet，源码非常简单，这里就不再贴出，其中主要的地方，在于它的构造函数中，调用HashSet父类中的构造方法。
+而在HashSet的这个构造方法中：
+
+```
+HashSet(int initialCapacity, float loadFactor, boolean dummy) {
+   map = new LinkedHashMap<>(initialCapacity, loadFactor);
+}
+```
+
+也就是说LinkedHashSet 实际上维护的时LinkedHashMap，只是把LinkedHashMap中的key作为元素添加，那么 LinkedHashMap该有的特性它也是有的。
+

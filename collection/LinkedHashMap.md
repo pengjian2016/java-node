@@ -102,7 +102,7 @@ public class LinkedHashMap<K,V>
 
 源码中有个构造函数（其他构造函数默认accessorder为false），其中一个 accessOrder 参数，这个是控制LinkedHashMap两个顺序的变量。两种顺序分别是，插入顺序和访问顺序。
 
-插入顺序：默认情况不指定accessOrder或者为false时，是插入顺序，当我们变量输出元素时，实际上是使用它内部的链表从head向下遍历。
+插入顺序：默认情况不指定accessOrder或者为false时，是插入顺序，当我们遍历输出元素时，实际上是使用它内部的链表从head向下遍历。
 
 访问顺序：当我们设置accessOrder为true时，则为访问顺序，首先插入仍然是有顺序的，其次，当我们get方法访问元素时，它会将访问过的通过afterNodeAccess()方法移动到链表的末尾，如果是修改元素的时候，我们知道在HashMap的putVal访问中，当查到key值相同的元素时也会调用afterNodeAccess()方法：
 

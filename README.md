@@ -15,8 +15,8 @@
      - [java 8 新特性面试点](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/java%E5%9F%BA%E7%A1%80/java8.md)
 
    - #### 集合模块
-      - [HashMap](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/collection/HashMap.md)
-      - LinkedHashMap 
+      - [HashMap与HashSet](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/collection/HashMap.md)
+      - [LinkedHashMap 与 LinkedHashSet](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/collection/LinkedHashMap.md)
       - TreeMap 和 TreeSet
       - ConcurrentHashMap、ConcurrentSkipListMap、CopyOnWriteArrayList
    - #### 同步，并发等

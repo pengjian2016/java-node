@@ -37,8 +37,8 @@ if (++size > threshold)
 这里我目前也没有好的答案，回答的时候一般把0.5以下和1的情况说一下基本上就这样了。
 
 #### 为什么容量是2的n次方
-1. hashcode 是一个整数，可以存很多值，要把所有的hash值都放在map数组里面是不现实的，那么必然要把hash值与数组长度取余之后存放即hash%length而取余运算效率是比较低的，效率最高的就是位运算了，所以要把hash%length 转换为位运算 (length  - 1) & hash 即：hash%length = (length  - 1) & hash 若使得等式成立，则length必须为2的倍数（大家可以自己测试），所以容量是2的n次方
-2. 可以使得添加的元素均匀分布在HashMap中的数组上，减少hash碰撞，避免形成链表的结构，使得查询效率降低
+1. hashcode 是一个整数，可以存很多值，要把所有的hash值都放在map数组里面是不现实的，那么必然要把hash值与数组长度取余之后存放即hash%length，而取余运算效率是比较低的，效率最高的就是位运算了，所以要把hash%length 转换为位运算 (length  - 1) & hash 即：hash%length = (length  - 1) & hash 若使得等式成立，则length必须为2的倍数（大家可以自己测试），所以容量是2的n次方
+2. 可以使得添加的元素均匀分布在HashMap中的数组上，减少hash碰撞，避免形成链表的结构（查询效率降低了）
 
 参考：
 [HashMap初始容量为什么是2的n次幂及扩容为什么是2倍的形式](/https://blog.csdn.net/Apeopl/article/details/88935422)

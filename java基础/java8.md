@@ -34,7 +34,6 @@ public static void main(String[] args) {
 新特性，接口默认方法：8
 
 ```
-那么问题来了，default关键字是java 8 引入的吗？还好我立马想到了switch语句里面的default 所以显然不是新引入的，面试官给我爬！
 
 #### 2.lambda表达式
 它允许把函数当做参数来使用，是面向函数式编程的思想，一定程度上可以使代码看起来更加简洁

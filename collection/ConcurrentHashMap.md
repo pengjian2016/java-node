@@ -97,7 +97,7 @@ final V putVal(K key, V value, boolean onlyIfAbsent) {
             }
 ```
 
-### 3. ConcurrentHashMap 如果计算元素个数，即size()方法：
+### 3. ConcurrentHashMap 如何计算元素个数，即size()方法：
 
 ```
 public int size() {

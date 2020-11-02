@@ -94,7 +94,7 @@ final V putVal(K key, V value, boolean onlyIfAbsent) {
             }
 ```
 
-### 3. ConcurrentHashMap 如何计算元素个数：
+### 3. ConcurrentHashMap 如何计算元素个数？
 源码中可以看到有size()和mappingCount()两种方法，不过差别不大（代码注释中更推荐mappig方法，应为元素个数有可能超过integer最大值），最后都是调用sumCount()方法，其中最主要的就是通过baseCont 和 CounterCell数组计算总数。
 
 ```
@@ -133,6 +133,9 @@ public long mappingCount() {
 }
 
 ```
+### 4. ConcurrentHashMap 中为何key和value 都不能为null，而HashMap却没有限制？
+上面的源码中可以看到，当key或者value为null时会抛异常。当key为null的时候不能辨别是key不存在还是本身就为null，value也同样如此。HashMap是非并发的，可以通过contains(key)来判断。其实，正如
+
 
 ## ConcurrentSkipListMap
 

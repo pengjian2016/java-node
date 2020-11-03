@@ -134,23 +134,107 @@ public long mappingCount() {
 
 ```
 ### 4. ConcurrentHashMap 中为何key和value 都不能为null，而HashMap却没有限制？
-上面的源码中可以看到，当key或者value为null时会抛异常。当key为null的时候不能辨别是key不存在还是本身就为null，value也同样如此。HashMap是非并发的，可以通过contains(key)来判断。其实，正如
+上面的源码中可以看到，当key或者value为null时会抛异常。当key为null的时候不能辨别是key不存在还是本身就为null，value也同样如此。而HashMap可以通过contains(key)来判断是否包含某个key。其实这些解释都有点牵强，一开始HashMap设计的时候没有考虑null的问题，后来开始越来越重视null值的问题，HashMap与ConcurrentHashMap两个原作者对于null值的讨论，后来都倾向于不允许null。具体参考下面的文章，是讲解的最详细：
 
+[ConcurrentHashMap key value都不允许为null](https://segmentfault.com/a/1190000021105716)
 
 ## ConcurrentSkipListMap
 
-#### ConcurrentSkipListMap 实现原理
-说到跳跃表，大家可能都有点印象，它是个具有多级的链表结构，
+#### ConcurrentSkipListMap 数据结构
+
+说到跳跃表，大家可能都有点印象，它是个具有多级的有序链表结构，存取时间都是o(log(n))，它又再concurrent包下，支持并发操作。
+
+![输入图片说明](https://images.gitee.com/uploads/images/2020/1103/093659_4a4b2dc3_8076629.png "屏幕截图.png")
+
+#### 相比与ConcurrentHashMap 它有什么优势或者特点
+
+前面的问题我们知道它是个有序的链表，需要有序的操作时使用它效率更好，另一方面它能支持更高的并发，在一定数据量一下它可能不如ConcurrentHashMap，但是随着数据越来越高的情况下，它的优势更加明显。
+
+参考：
+[Java多线程（四）之ConcurrentSkipListMap深入分析](https://blog.csdn.net/iteye_1168/article/details/82536800)
+
+
+## CopyOnWriteArrayList
+
+它是多线程操作下的ArrayList，源码中可以看到，其内部仍然是一个数组结构，get方法没有任何的锁，而add方法和remove方法都是通过ReentrantLock 加锁，而这两个方法都是在添加元素或者删除元素时copy一个新的数组，然后再set回去。
+
+它适用的场景主要就是读多写少的情况，因为写的时候会复制新的数组，如果写的情况较多，频繁的创建新数组，且随着数据越来越多，复制的过程也会越来越慢。
+
+另外在读的时候有一定的延迟，因为读的可能是旧的数组。
 
 
 
+部分源码:
 
+```
+public class CopyOnWriteArrayList<E>
+    implements List<E>, RandomAccess, Cloneable, java.io.Serializable {
+    private static final long serialVersionUID = 8673264195747942595L;
 
+    //锁
+    final transient ReentrantLock lock = new ReentrantLock();
 
+    //数据存储
+    private transient volatile Object[] array;
+    
+    final Object[] getArray() {
+        return array;
+    }
 
+     
+    final void setArray(Object[] a) {
+        array = a;
+    }
 
+    private E get(Object[] a, int index) {
+        return (E) a[index];
+    }
 
+    //get 方法
+    public E get(int index) {
+        return get(getArray(), index);
+    }
+    
+    //add 方法
+    public boolean add(E e) {
+        final ReentrantLock lock = this.lock;
+        lock.lock();
+        try {
+            Object[] elements = getArray();
+            int len = elements.length;
+            Object[] newElements = Arrays.copyOf(elements, len + 1);
+            newElements[len] = e;
+            setArray(newElements);
+            return true;
+        } finally {
+            lock.unlock();
+        }
+    }
 
+    //remove 方法
+    public E remove(int index) {
+        final ReentrantLock lock = this.lock;
+        lock.lock();
+        try {
+            Object[] elements = getArray();
+            int len = elements.length;
+            E oldValue = get(elements, index);
+            int numMoved = len - index - 1;
+            if (numMoved == 0)
+                setArray(Arrays.copyOf(elements, len - 1));
+            else {
+                Object[] newElements = new Object[len - 1];
+                System.arraycopy(elements, 0, newElements, 0, index);
+                System.arraycopy(elements, index + 1, newElements, index,
+                                 numMoved);
+                setArray(newElements);
+            }
+            return oldValue;
+        } finally {
+            lock.unlock();
+        }
+    }
+```
 
 
 

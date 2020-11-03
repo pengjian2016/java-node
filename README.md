@@ -18,7 +18,7 @@
       - [HashMap与HashSet](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/collection/HashMap.md)
       - [LinkedHashMap 与 LinkedHashSet](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/collection/LinkedHashMap.md)
       - [TreeMap 和 TreeSet](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/collection/TreeMap.md)
-      - ConcurrentHashMap、ConcurrentSkipListMap、CopyOnWriteArrayList
+      - [ConcurrentHashMap、ConcurrentSkipListMap、CopyOnWriteArrayList](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/collection/ConcurrentHashMap.md)
    - #### 同步，并发等
       - 锁/并发控制器:synchronized，AbstractQueuedSynchronizer（AQS）、ReentrantLock、ReentrantReadWriteLock、compareAndSwap(CAS)
       - 线程池：ThreadPoolExecutor

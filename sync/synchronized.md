@@ -113,14 +113,11 @@ public void getSome(){
 ```
 
 #### 2. synchronized 实现原理或者底层原理等？
- 
-同步代码块：
+
 ![同步代码块 图1](https://images.gitee.com/uploads/images/2020/1106/144205_40c17e72_8076629.png "同步代码块 图1")
  
-同步静态方法：
 ![同步静态方法 图2](https://images.gitee.com/uploads/images/2020/1106/150332_5630893e_8076629.png "同步静态方法 图2")
 
-同步实例方法：
 ![同步实例方法 图3](https://images.gitee.com/uploads/images/2020/1106/150440_27ae4889_8076629.png "同步实例方法 图3")
 
 

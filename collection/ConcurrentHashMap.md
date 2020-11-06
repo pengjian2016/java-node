@@ -134,7 +134,7 @@ public long mappingCount() {
 
 ```
 ### 4. ConcurrentHashMap 中为何key和value 都不能为null，而HashMap却没有限制？
-源码中可以看到，当key或者value为null时会抛异常，当key为null的时候不能辨别是key不存在还是本身就为null，value也同样如此，即并发安全的容器中不允许null值的出现的主要原因是他可能会在并发的情况下带来难以容忍的二义性。而HashMap可以通过contains(key)来判断是否包含某个key。HashMap与ConcurrentHashMap两个原作者对于null值的讨论，ConcurrentHashMap认为允许null是错误的设计，HashMap的作者也发现null是一个非常令人头疼的问题。具体参考下面的文章，讲解的最详细：
+源码中可以看到，当key或者value为null时会抛异常，当key为null的时候不能辨别是key不存在还是本身就为null，value也同样如此，即并发安全的容器中不允许null值的出现的主要原因是他可能会在并发的情况下带来难以容忍的二义性。而HashMap可以通过contains(key)来判断是否包含某个key。这个问题其实没有什么意义，HashMap与ConcurrentHashMap两个原作者对于null值的讨论，ConcurrentHashMap作者认为允许null是错误的设计，HashMap的作者也发现null是一个非常令人头疼的问题。具体参考下面的文章，讲解的最详细：
 
 [ConcurrentHashMap key value都不允许为null](https://segmentfault.com/a/1190000021105716)
 
@@ -163,7 +163,7 @@ public long mappingCount() {
 另外在读的时候有一定的延迟，因为读的可能是旧的数组。
 
 #### 1. 为什么引入一个新的数组操作，而不是在原来的数组上直接操作？
- 
+ 引用下面的两个文章：
 1.1
 
 > volatile 关键字修饰的是数组，如果我们简单的在原来数组上修改其中某几个元素的值，是无法触发可见性的，我们必须通过修改数组的内存地址才行，也就说要对数组进行重新赋值才行。

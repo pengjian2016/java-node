@@ -1,10 +1,10 @@
 # synchronized
 
-#### 1. synchronized 的使用方式有哪些或者能修饰哪些地方？
+## 1. synchronized 的使用方式有哪些或者能修饰哪些地方？
 
 synchronized主要有三种使用方式：
 
-1.1 修饰静态方法，作用与整个类，静态资源在整个内存中只有一份，通过new出来的对象调用该方法或者通过类名调用该方法，都是给当前类加锁，换句话说，这个类的这个静态方法在整个系统只有一个锁。
+#### 1.1 修饰静态方法，作用与整个类，静态资源在整个内存中只有一份，通过new出来的对象调用该方法或者通过类名调用该方法，都是给当前类加锁，换句话说，这个类的这个静态方法在整个系统只有一个锁。
 
 ```
 public static synchronized void myMethod() {
@@ -12,7 +12,7 @@ public static synchronized void myMethod() {
 }
 ```
 
-1.2 修饰实例方法，作用与实例对象，即每个实例对象加锁
+#### 1.2 修饰实例方法，作用与实例对象，即每个实例对象加锁
 
 ```
 public synchronized void getResource(){
@@ -97,7 +97,7 @@ enter getResource:com.jov.SynTest@7cfbac7b,num=1  //线程1 synchronized 方法�
 out getResource:com.jov.SynTest@7cfbac7b,num=1
 ```
 
-1.3 修饰代码块，如果是this或者是一个对象等，仍是是给当前对象加锁，如果是类名.class 这种是给整个类加锁
+#### 1.3 修饰代码块，如果是this或者是一个对象等，仍是是给当前对象加锁，如果是类名.class 这种是给整个类加锁
 
 ```
 public void getSome(){
@@ -112,7 +112,7 @@ public void getSome(){
 }
 ```
 
-#### 2. synchronized 实现原理或者底层原理等？
+## 2. synchronized 实现原理或者底层原理等？
 
 ![同步代码块 图1](https://images.gitee.com/uploads/images/2020/1106/144205_40c17e72_8076629.png "同步代码块 图1")
  
@@ -161,12 +161,12 @@ java中对象的结构主要包括：对象头，实例数据以及对齐填充�
 
 上面的内容对MarkWord做了详细说明，其存储的主要内容：哈希码（HashCode）、GC分代年龄、锁状态标志、线程持有的锁、偏向线程 ID、偏向时间戳等，以及MarkWord中锁的几种状态，无锁->偏向锁>轻量级锁->重量级锁。
 
-### 那么 synchronized 锁的升级过程呢？
+#### 2.1 那么 synchronized 锁的升级过程是什么样子的呢？
 
 #### 无锁
 无锁状态，无锁即没有对资源进行锁定，所有的线程都可以对同一个资源进行访问，但是只有一个线程能够成功修改资源。
 
-无锁的特点就是在循环内进行修改操作，线程会不断的尝试修改共享资源，直到能够成功修改资源并退出，在此过程中没有出现冲突的发生，这很像我们在之前文章中介绍的 CAS 实现，CAS 的原理和应用就是无锁的实现。无锁无法全面代替有锁，但无锁在某些场合下的性能是非常高的。
+无锁的特点就是在循环内进行修改操作，线程会不断的尝试修改共享资源，直到能够成功修改资源并退出，在此过程中没有出现冲突的发生，这很像我 CAS 实现，CAS 的原理和应用就是无锁的实现。无锁无法全面代替有锁，但无锁在某些场合下的性能是非常高的。
 
 #### 偏向锁
 Hotspot 的作者经过研究发现，大多数情况下，锁不仅不存在多线程竞争，还存在锁由同一线程多次获得的情况，偏向锁就是在这种情况下出现的，它的出现是为了解决只有在一个线程执行同步时提高性能。
@@ -209,10 +209,12 @@ Hotspot 的作者经过研究发现，大多数情况下，锁不仅不存在多
 
 上图简单描述多线程获取锁的过程，当多个线程同时访问一段同步代码时，首先会进入 Entry Set当线程获取到对象的 monitor 后进入 The Owner 区域并把 monitor 中的 owner 变量设置为当前线程，同时 monitor 中的计数器count 加1，若线程调用 wait() 方法，将释放当前持有的 monitor，owner变量恢复为 null，count自减1，同时该线程进入 WaitSet 集合中等待被唤醒。若当前线程执行完毕也将释放 monitor (锁)并复位变量的值，以便其他线程进入获取monitor(锁)
 
-以上 关于 synchronized 锁的升级过程呢 内容 摘自[《看完你就明白的锁系列之锁的状态》](https://www.cnblogs.com/cxuanBlog/p/11684390.html)
+以上 关于 synchronized 锁的升级过程 内容 摘自[《看完你就明白的锁系列之锁的状态》](https://www.cnblogs.com/cxuanBlog/p/11684390.html)
 
-为什么摘抄了这么长一段？上面我们提到monitorenter、monitorexit两个指令如何实现锁的，翻阅大多数文章都不是很明白，只有这篇文章明确描述了monitor，Lock Record这些在哪一阶段使用，加上synchronized 锁的膨胀过程被面试的很频繁，所以干脆一块拿过来，我承认没有该作者写的好。
+为什么摘抄了这么长一段？上面我们提到monitorenter、monitorexit两个指令如何实现锁的，翻阅大多数文章都说的不是很明白，大多都是扯到了monitor监视器，但是我们都知道synchronized是有升级过程的，不可能上来就使用monitor这种东西吧。只有这篇文章明确描述了monitor，Lock Record这些在哪一阶段使用，加上synchronized 锁的膨胀过程被面试的很频繁，所以干脆一块拿过来，我承认没有该作者写的好。进入同步块时（即monitorenter、monitorexit）从偏向锁开始，一步一步往上升级，文章介绍的很清楚，这里也不再多说吗了。
  
-monitorenter、monitorexit的加锁过程包括ACC_SYNCHRONIZED 都与Monitor有关，可是文章中又是在重量级锁中才用到了monitor，这让我反而不明白了，难道monitorenter、monitorexit和ACC_SYNCHRONIZED 只是标识同步代码块， 偏向锁，轻量级锁 跟Monitor没有任何关系吗？这是我个人比较疑惑的地方
+#### 2.2 那么ACC_SYNCHRONIZED 标志又如何实现锁的呢，它与monitor指令有什么区别呢？
+
+
 
 #### jdk 1.6 对synchronized做了哪些优化

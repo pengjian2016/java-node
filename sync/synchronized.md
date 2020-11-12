@@ -123,7 +123,7 @@ public void getSome(){
 
 如果是代码块，不管是this||object 还是类名.class 都是通过monitorenter和monitorexit两个指令来完成加锁的过程，monitorenter表示进入同步块，monitorexit表示退出同步块。而同步方法都是使用 ACC_SYNCHRONIZED标志。
 
-那么monitorenter、monitorexit如何实现同步过程的呢？这里首先要引入对象头的概念。
+那么monitorenter、monitorexit如何实现同步过程的呢？这里首先要对java对象内存结构做一下说明：
 
 java中对象的结构主要包括：对象头，实例数据以及对齐填充信息
 
@@ -211,9 +211,10 @@ Hotspot 的作者经过研究发现，大多数情况下，锁不仅不存在多
 
 以上 关于 synchronized 锁的升级过程 内容 摘自[《看完你就明白的锁系列之锁的状态》](https://www.cnblogs.com/cxuanBlog/p/11684390.html)
 
-为什么摘抄了这么长一段？上面我们提到monitorenter、monitorexit两个指令如何实现锁的，翻阅大多数文章都说的不是很明白，大多都是扯到了monitor监视器，但是我们都知道synchronized是有升级过程的，不可能上来就使用monitor这种东西吧。只有这篇文章明确描述了monitor，Lock Record这些在哪一阶段使用，加上synchronized 锁的膨胀过程被面试的很频繁，所以干脆一块拿过来，我承认没有该作者写的好。进入同步块时（即monitorenter、monitorexit）从偏向锁开始，一步一步往上升级，文章介绍的很清楚，这里也不再多说吗了。
+为什么摘抄了这么长一段？上面我们提到monitorenter、monitorexit两个指令如何实现锁的，翻阅大多数文章都说的不是很明白，大多都是扯到了monitor监视器，但是我们都知道synchronized是有升级过程的，不可能上来就使用monitor这种东西吧。只有这篇文章明确描述了monitor，Lock Record这些在哪一阶段使用，加上synchronized 锁的膨胀过程被面试的很频繁，所以干脆一块拿过来，我承认没有该作者写的好。进入同步块时（即monitorenter、monitorexit）从偏向锁开始，一步一步往上升级，文章介绍的很清楚，这里也不再多说了。
  
-#### 2.2 那么ACC_SYNCHRONIZED 标志又如何实现锁的呢，它与monitor指令有什么区别呢？
+#### 2.2 那么monitorenter、monitorexit和ACC_SYNCHRONIZED 标志到底如何实现锁的呢？
+上面我们知道synchronized锁的升级过程，以及对象头与锁之间的关联关系， 那么monitorenter、monitorexit和ACC_SYNCHRONIZED 这些指令或标志又是如何具体实现这些过程的呢，
 
 
 

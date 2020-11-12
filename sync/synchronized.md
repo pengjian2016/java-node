@@ -2,9 +2,8 @@
 
 ## 1. synchronized 的使用方式有哪些或者能修饰哪些地方？
 
-synchronized主要有三种使用方式：
 
-#### 1.1 修饰静态方法，作用与整个类，静态资源在整个内存中只有一份，通过new出来的对象调用该方法或者通过类名调用该方法，都是给当前类加锁，换句话说，这个类的这个静态方法在整个系统只有一个锁。
+ 1.1 修饰静态方法，作用与整个类，静态资源在整个内存中只有一份，通过new出来的对象调用该方法或者通过类名调用该方法，都是给当前类加锁，换句话说，这个类的这个静态方法在整个系统只有一个锁。
 
 ```
 public static synchronized void myMethod() {
@@ -12,14 +11,29 @@ public static synchronized void myMethod() {
 }
 ```
 
-#### 1.2 修饰实例方法，作用与实例对象，即每个实例对象加锁
+ 1.2 修饰实例方法，作用与实例对象，即每个实例对象加锁
 
 ```
 public synchronized void getResource(){
    //实列对象加锁
 }
 ```
-下面是实例方法测试内容，针对同一个对象synTest的两次线程调用，结果是先启动的线程获取锁先执行完成后，另外的线程才能得到锁，测试结果中线程2先启动获得锁执行完成后线程1才执行，而对象synTest2却并不受影响。所以，synchronized是针对每个对象加锁
+ 1.3 修饰代码块，如果是this或者是一个对象等，仍是是给当前对象加锁，如果是类名.class 这种是给整个类加锁
+
+```
+public void getSome(){
+    synchronized(this){
+        // 当前对象加锁
+        System.out.println("this");
+    }
+    synchronized (SynTest.class){
+        // 当前类加锁
+        System.out.println("class");
+    }
+}
+```
+
+下面是针对实例方法测试内容，针对同一个对象synTest的两次线程调用，结果是先启动的线程获取锁先执行完成后，另外的线程才能得到锁，测试结果中线程2先启动获得锁执行完成后线程1才执行，而对象synTest2却并不受影响。所以，synchronized是针对每个对象加锁
 
 ```
 public class SynTest {
@@ -97,20 +111,6 @@ enter getResource:com.jov.SynTest@7cfbac7b,num=1  //线程1 synchronized 方法�
 out getResource:com.jov.SynTest@7cfbac7b,num=1
 ```
 
-#### 1.3 修饰代码块，如果是this或者是一个对象等，仍是是给当前对象加锁，如果是类名.class 这种是给整个类加锁
-
-```
-public void getSome(){
-    synchronized(this){
-        // 当前对象加锁
-        System.out.println("this");
-    }
-    synchronized (SynTest.class){
-        // 当前类加锁
-        System.out.println("class");
-    }
-}
-```
 
 ## 2. synchronized 实现原理或者底层原理等？
 
@@ -211,11 +211,15 @@ Hotspot 的作者经过研究发现，大多数情况下，锁不仅不存在多
 
 以上 关于 synchronized 锁的升级过程 内容 摘自[《看完你就明白的锁系列之锁的状态》](https://www.cnblogs.com/cxuanBlog/p/11684390.html)
 
-为什么摘抄了这么长一段？上面我们提到monitorenter、monitorexit两个指令如何实现锁的，翻阅大多数文章都说的不是很明白，大多都是扯到了monitor监视器，但是我们都知道synchronized是有升级过程的，不可能上来就使用monitor这种东西吧。只有这篇文章明确描述了monitor，Lock Record这些在哪一阶段使用，加上synchronized 锁的膨胀过程被面试的很频繁，所以干脆一块拿过来，我承认没有该作者写的好。进入同步块时（即monitorenter、monitorexit）从偏向锁开始，一步一步往上升级，文章介绍的很清楚，这里也不再多说了。
+为什么摘抄了这么长一段？上面我们提到monitorenter、monitorexit两个指令如何实现锁的，翻阅大多数文章都说的不是很明白，大多都是扯到了monitor监视器，但是我们都知道synchronized是有升级过程的，不可能上来就使用monitor这种东西吧。只有这篇文章明确描述了monitor，Lock Record这些在哪一阶段使用，加上synchronized 锁的膨胀过程被面试的很频繁，所以干脆一块拿过来，我承认没有该作者写的好。
+
+回到上面的问题：monitorenter、monitorexit如何实现锁的过程，其实就是每个线程竞争对象锁的过程，进入monitorenter之后，竞争从偏向锁开始，一步一步往上升级，文章介绍的很清楚，这里也不再多说。
+当然这里其实也只介绍了个大概过程，有些面试官总是喜欢追根究底，对于这种情况，推荐下面的文章，这才是硬核文章，从c++代码一步一步分析，包括monitorenter，monitorexit两个指令的使用：
+
+[死磕Synchronized底层实现--偏向锁](https://juejin.im/post/6844903928681742344) 
+
+
+#### 2.2 那么ACC_SYNCHRONIZED 标志时如何实现锁的呢，它与monitorenter、monitorexit有关系吗？
  
-#### 2.2 那么monitorenter、monitorexit和ACC_SYNCHRONIZED 标志到底如何实现锁的呢？
-上面我们知道synchronized锁的升级过程，以及对象头与锁之间的关联关系， 那么monitorenter、monitorexit和ACC_SYNCHRONIZED 这些指令或标志又是如何具体实现这些过程的呢，
-
-
 
 #### jdk 1.6 对synchronized做了哪些优化

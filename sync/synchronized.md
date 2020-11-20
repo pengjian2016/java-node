@@ -218,6 +218,9 @@ Hotspot 的作者经过研究发现，大多数情况下，锁不仅不存在多
 
 [死磕Synchronized底层实现--偏向锁](https://juejin.im/post/6844903928681742344) 
 
+[死磕Synchronized底层实现--轻量级锁](https://juejin.cn/post/6844903928702713864)
+
+[死磕Synchronized底层实现--重量级锁](https://juejin.cn/post/6844903928715280391)
 
 #### 2.2 那么ACC_SYNCHRONIZED 标志时如何实现锁的呢，它与monitorenter、monitorexit有关系吗？
 oracle文档中的说明（原文2.11.10. Synchronization:[Chapter 2. The Structure of the Java Virtual Machine](https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-2.html#jvms-2.11.10)）:
@@ -245,3 +248,5 @@ jdk 1.6之后对此做了大量的优化，synchronized引入了多种状态，�
 
 #### 2.4 synchronized 锁有升级过程，那么能降级吗？
 这个问题与不同的虚拟机实现有关，如果虚拟机不支持降级，那就是不能降级，当然像Hotspot jvm（目前主流jvm）就可以降级，只是降级条件极为苛刻，而且频繁的升级降级将给系统带来极大的性能影响，所以一般认为不可降级。
+
+

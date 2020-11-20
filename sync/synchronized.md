@@ -249,4 +249,6 @@ jdk 1.6之后对此做了大量的优化，synchronized引入了多种状态，�
 #### 2.4 synchronized 锁有升级过程，那么能降级吗？
 这个问题与不同的虚拟机实现有关，如果虚拟机不支持降级，那就是不能降级，当然像Hotspot jvm（目前主流jvm）就可以降级，只是降级条件极为苛刻，而且频繁的升级降级将给系统带来极大的性能影响，所以一般认为不可降级。
 
+#### 2.5 synchronized 与Lock（ReentrantLock）区别？
+将会在ReentrantLock 中讲到
 

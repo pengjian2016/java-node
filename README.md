@@ -22,8 +22,7 @@
    - #### 同步，并发等
       - 锁/并发控制器:
         - [synchronized](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/sync/synchronized.md)，
-        - AbstractQueuedSynchronizer（AQS）、
-        - ReentrantLock、ReentrantReadWriteLock、compareAndSwap(CAS)
+        - AbstractQueuedSynchronizer（AQS）、ReentrantLock、ReentrantReadWriteLock、compareAndSwap(CAS)
       - 线程池：ThreadPoolExecutor
       - ThreadLocal
    - #### jvm

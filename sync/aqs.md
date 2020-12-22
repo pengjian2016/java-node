@@ -176,7 +176,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
 }
 
 ```
-源码中可以看到，构造方法中默认使用非公平锁（NonfairSync），当然也可以指定为公平锁（FairSync），先看一下公平锁的加锁过程，当调用 ReentrantLock 中的 lock() 方法时，实际上会调用sync.lock()，查看FairSync中lock的实现就是非常简单的调用 acquire(1) 方法，这个方法是AQS中的一个方法，具体如下：
+1). 源码中可以看到，构造方法中默认使用非公平锁（NonfairSync），当然也可以指定为公平锁（FairSync），先看一下公平锁的加锁过程，当调用 ReentrantLock 中的 lock() 方法时，实际上会调用sync.lock()，查看FairSync中lock的实现就是非常简单的调用 acquire(1) 方法，这个方法是AQS中的一个方法，具体如下：
 
 ```
     public final void acquire(int arg) {
@@ -185,7 +185,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
             selfInterrupt();
     }
 ```
-首先是调用tryAcquire方法，这个方法在FairSync内部有实现，看上面的源码，在tryAcquire方法中，首先获取当前线程，然后判断state是否是0（0表示无锁状态），如果是0即，没有加锁的情况下，在if判断中先调用hasQueuedPredecessors()方法，该方法也在AQS中，具体如下：
+2). 首先是调用tryAcquire方法，这个方法在FairSync内部有实现，看上面的源码，在tryAcquire方法中，首先获取当前线程，然后判断state是否是0（0表示无锁状态），如果是0即，没有加锁的情况下，在if判断中先调用hasQueuedPredecessors()方法，该方法也在AQS中，具体如下：
 
 ```
     public final boolean hasQueuedPredecessors() {
@@ -203,7 +203,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
             ((s = h.next) == null || s.thread != Thread.currentThread());
     }
 ```
-如果队列中没有等待的线程，则会调用compareAndSetState 设置锁状态，设置成功后调用setExclusiveOwnerThread方法，设置当前线程为拥有锁的线程，当state不为0的时候，则判断拥有锁的线程是否是当前线程，如果是，则把state加1，这也是可重入锁的实现逻辑。再回到acquire方法中，当tryAcquire方法返回失败时（成功时则流程结束），即未获取到锁时会调用acquireQueued(addWaiter(Node.EXCLUSIVE), arg) ，这里面是两个方法，先调用addWaiter 方法将当前线程加入到队列尾部并返回包含当前线程的Node节点，acquireQueued会把放入队列中的线程不断去获取锁，直到获取成功或者不再需要获取（中断）。
+3). 如果队列中没有等待的线程，则会调用compareAndSetState 设置锁状态，设置成功后调用setExclusiveOwnerThread方法，即设置当前线程为拥有锁的线程，当state不为0的时候，则判断拥有锁的线程是否是当前线程，如果是，则把state加1，这也是可重入锁的实现逻辑。再回到acquire方法中，当tryAcquire方法返回失败时（成功时则流程结束），即未获取到锁时会调用acquireQueued(addWaiter(Node.EXCLUSIVE), arg) ，这里面是两个方法，先调用addWaiter 方法将当前线程加入到队列尾部并返回包含当前线程的Node节点，acquireQueued会把放入队列中的线程不断去获取锁，直到获取成功或者不再需要获取（中断）。
 
 以上是ReentrantLock公平锁的加锁过程，过程虽然不复杂，但是也需要一定的思考，特别是加锁失败时的逻辑，如果进入队列，如何在队列中获取锁的，其核心就在acquireQueued方法中，这个会在后面详细介绍，这里先介绍整体流程，方便理解。总结公平锁加锁流程如下：
 
@@ -217,6 +217,14 @@ public class ReentrantLock implements Lock, java.io.Serializable {
 总的来讲，它与公平锁的区别就是，先进行一次抢锁，成功则获取锁，不成功则继续判断state，当state=0时，它不会判断当前队列是否为空，这就是两个主要的区别。
 
 ![非公平锁](https://images.gitee.com/uploads/images/2020/1218/144302_4cb133f1_8076629.png "屏幕截图.png")
+
+
+以上就是ReentrantLock的核心内容，它是独占锁，其内部实现了公平锁和非公平锁两种机制，它实现了Lock接口，所以当面试官问起java中lock与synchronized区别时，主要就是指ReentrantLock，那么它们有哪些区别呢？
+
+
+
+
+
 
 
 AbstractQueuedSynchronizer（AQS）、ReentrantLock、ReentrantReadWriteLock、compareAndSwap(CAS)

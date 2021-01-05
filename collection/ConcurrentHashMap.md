@@ -158,6 +158,31 @@ public long mappingCount() {
 
 它是多线程操作下的ArrayList，源码中可以看到，其内部仍然是一个数组结构，get方法没有任何的锁，而add方法和remove方法都是通过ReentrantLock 加锁，而这两个方法都是在添加元素或者删除元素时copy一个新的数组，然后再set回去。
 
+```
+    //get 方法
+    public E get(int index) {
+        return get(getArray(), index);
+    }
+    
+    //add 方法
+    public boolean add(E e) {
+        final ReentrantLock lock = this.lock;
+        lock.lock();
+        try {
+            Object[] elements = getArray();
+            int len = elements.length;
+            Object[] newElements = Arrays.copyOf(elements, len + 1);
+            newElements[len] = e;
+            setArray(newElements);
+            return true;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+```
+
+
 它适用的场景主要就是读多写少的情况，因为写的时候会复制新的数组，如果写的情况较多，频繁的创建新数组，且随着数据越来越多，复制的效率也就越低。
 
 另外在读的时候有一定的延迟，因为读的可能是旧的数组。

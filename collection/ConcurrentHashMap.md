@@ -40,7 +40,7 @@ final V putVal(K key, V value, boolean onlyIfAbsent) {
             break;   // no lock when adding to empty bin
     }
 ```
-- 2.4 如果当前位置不为空，判断是否在进行库容，如果是，则帮助库容（多线程库容）
+- 2.4 如果当前位置不为空，判断是否在进行扩容，如果是，则帮助扩容（多线程扩容）
 ```
     else if ((fh = f.hash) == MOVED)
            tab = helpTransfer(tab, f);

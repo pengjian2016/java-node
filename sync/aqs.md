@@ -1,6 +1,6 @@
 ## AbstractQueuedSynchronizer（AQS）
 
-#### 1. 什么是AQS？原理是什么？
+### 1. 什么是AQS？原理是什么？
 
 AQS是一种提供了原子式管理同步状态、阻塞和唤醒线程功能以及队列模型的框架。近年来AQS这个框架被面试的几率越来越高，正如它的名称中包含的一样它是个抽象类，那些基于它的实现正是突出它重要的原因，这些具体实现类包括ReentrantLock、ReentrantReadWriteLock、Semaphore、CountDownLatch等，当然，它们不是直接继承AbstractQueuedSynchronizer，而是在内部定义了NonfairSync，FairSync这样的类去实现它。同时它也是模板方法设计模式的经典应用。
 
@@ -67,7 +67,7 @@ protected boolean tryReleaseShared(int arg) {
 ```
 下面将结合ReentrantLock，ReentrantReadWriteLock等来详细的介绍AQS如果实现独占锁、共享锁、公平和非公平锁，等待队列如何工作的，释放锁后是怎么样的流程，条件队列等
 
-#### 2. ReentrantLock 如何实现公平锁和非公平锁的？获取锁的过程？
+### 2. ReentrantLock 如何实现公平锁和非公平锁的？获取锁的过程？
 
 2.1 ReentrantLock 公平锁
 
@@ -285,8 +285,186 @@ public class ReentrantLock implements Lock, java.io.Serializable {
 |  性能 |  做过优化后（引入偏向锁，轻量级锁等），性能已经与ReentrantLock没有太大差别 |  性能无差别  |
 
 
+### 3 ReentrantReadWriteLock 读和写有什么区别？具体怎么实现的？
+3.1 ReentrantReadWriteLock 实现了ReadWriteLock接口，该接口的两个方法分别对应读锁和写锁：
+```
+public interface ReadWriteLock {
+    
+    Lock readLock();
 
+    Lock writeLock();
+}
 
+```
+先看一下写锁的实现，当我们创建 
+
+final ReentrantReadWriteLock rwlock = new ReentrantReadWriteLock();
+
+调用 rwlock.writeLock().lock();方法时，此时是写锁，看一下lock()方法的具体实现：
+
+```
+public void lock() {
+    sync.acquire(1);
+}
+// 其中sync 对象是ReentrantReadWriteLock 内部类Sync的实例，acqure方法是aqs中的内容，上面已经列出源码，这里不再多说，它会先调用tryAcquire（）方法
+abstract static class Sync extends AbstractQueuedSynchronizer {
+    protected final boolean tryAcquire(int acquires) {
+            // 当前线程
+            Thread current = Thread.currentThread();
+            // 锁状态
+            int c = getState();
+            // 写线程数量
+            int w = exclusiveCount(c);
+            if (c != 0) {
+                // 如果c不为0，w=0 则说明有读锁（state读和写都可以修改），或者w!=0 但是获取写锁的线程不是当前线程（可重入）
+                if (w == 0 || current != getExclusiveOwnerThread())
+                    return false;
+                //判断同一线程获取写锁是否超过最大次数（65535）
+                if (w + exclusiveCount(acquires) > MAX_COUNT)
+                    throw new Error("Maximum lock count exceeded");
+                // 可重入，state+1，获取锁成功
+                setState(c + acquires);
+                return true;
+            }
+            // c=0 的情况，说明没有被锁，先判断writerShouldBlock()方法，该方法在公平锁FairSync（其实就是判断等待队列是否为空）和非公平锁NonfairSync中被实现，cas设置state 成功则获取锁，否则获取锁失败
+            if (writerShouldBlock() ||
+                !compareAndSetState(c, c + acquires))
+                return false;
+            setExclusiveOwnerThread(current);
+            return true;
+        }
+}
+
+static final class NonfairSync extends Sync {
+        final boolean writerShouldBlock() {
+            return false; // 不需要等待
+        }
+        final boolean readerShouldBlock() {
+            return apparentlyFirstQueuedIsExclusive();
+        }
+    }
+
+static final class FairSync extends Sync {
+        final boolean writerShouldBlock() {
+            return hasQueuedPredecessors();
+        }
+        final boolean readerShouldBlock() {
+            return hasQueuedPredecessors();
+        }
+    }
+
+```
+以上是ReentrantReadWriteLock 写锁的整个过程。
+
+调用 rwlock.readLock().lock();方法时，看一下lock()方法的具体实现：
+```
+public void lock() {
+    sync.acquireShared(1);
+}
+...
+//AQS中acquireShared 方法，先调用tryAcquireShared 方法，该方法在ReentrantReadWriteLock内部有实现
+public final void acquireShared(int arg) {
+        if (tryAcquireShared(arg) < 0)
+            doAcquireShared(arg);
+    }
+
+abstract static class Sync extends AbstractQueuedSynchronizer {
+    protected final int tryAcquireShared(int unused) {
+           
+            Thread current = Thread.currentThread();
+            // 锁状态
+            int c = getState();
+            // 如果当前有写锁并且写锁不是当前线程拥有，则获取锁失败
+            if (exclusiveCount(c) != 0 &&
+                getExclusiveOwnerThread() != current)
+                return -1;
+            // 读锁数量
+            int r = sharedCount(c);
+            //readerShouldBlock() 方法，如果是公平锁，则判断是否有等待队列，如果是非公平锁，则判断
+            if (!readerShouldBlock() &&
+                r < MAX_COUNT &&
+                compareAndSetState(c, c + SHARED_UNIT)) {
+                if (r == 0) {
+                    firstReader = current;
+                    firstReaderHoldCount = 1;
+                } else if (firstReader == current) {
+                    firstReaderHoldCount++;
+                } else {
+                    HoldCounter rh = cachedHoldCounter;
+                    if (rh == null || rh.tid != getThreadId(current))
+                        cachedHoldCounter = rh = readHolds.get();
+                    else if (rh.count == 0)
+                        readHolds.set(rh);
+                    rh.count++;
+                }
+                return 1;
+            }
+            return fullTryAcquireShared(current);
+        }
+
+        /**
+         * Full version of acquire for reads, that handles CAS misses
+         * and reentrant reads not dealt with in tryAcquireShared.
+         */
+        final int fullTryAcquireShared(Thread current) {
+            /*
+             * This code is in part redundant with that in
+             * tryAcquireShared but is simpler overall by not
+             * complicating tryAcquireShared with interactions between
+             * retries and lazily reading hold counts.
+             */
+            HoldCounter rh = null;
+            for (;;) {
+                int c = getState();
+                if (exclusiveCount(c) != 0) {
+                    if (getExclusiveOwnerThread() != current)
+                        return -1;
+                    // else we hold the exclusive lock; blocking here
+                    // would cause deadlock.
+                } else if (readerShouldBlock()) {
+                    // Make sure we're not acquiring read lock reentrantly
+                    if (firstReader == current) {
+                        // assert firstReaderHoldCount > 0;
+                    } else {
+                        if (rh == null) {
+                            rh = cachedHoldCounter;
+                            if (rh == null || rh.tid != getThreadId(current)) {
+                                rh = readHolds.get();
+                                if (rh.count == 0)
+                                    readHolds.remove();
+                            }
+                        }
+                        if (rh.count == 0)
+                            return -1;
+                    }
+                }
+                if (sharedCount(c) == MAX_COUNT)
+                    throw new Error("Maximum lock count exceeded");
+                if (compareAndSetState(c, c + SHARED_UNIT)) {
+                    if (sharedCount(c) == 0) {
+                        firstReader = current;
+                        firstReaderHoldCount = 1;
+                    } else if (firstReader == current) {
+                        firstReaderHoldCount++;
+                    } else {
+                        if (rh == null)
+                            rh = cachedHoldCounter;
+                        if (rh == null || rh.tid != getThreadId(current))
+                            rh = readHolds.get();
+                        else if (rh.count == 0)
+                            readHolds.set(rh);
+                        rh.count++;
+                        cachedHoldCounter = rh; // cache for release
+                    }
+                    return 1;
+                }
+            }
+        }
+    
+        
+}
+
+```
 
 
 AbstractQueuedSynchronizer（AQS）、ReentrantLock、ReentrantReadWriteLock、compareAndSwap(CAS)

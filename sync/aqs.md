@@ -285,7 +285,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
 |  性能 |  做过优化后（引入偏向锁，轻量级锁等），性能已经与ReentrantLock没有太大差别 |  性能无差别  |
 
 
-### 3 ReentrantReadWriteLock 读和写有什么区别？具体怎么实现的？
+### 3 ReentrantReadWriteLock 读写原理知道吗？能介绍一下吗？
 3.1 ReentrantReadWriteLock 实现了ReadWriteLock接口，该接口的两个方法分别对应读锁和写锁：
 ```
 public interface ReadWriteLock {
@@ -316,7 +316,7 @@ abstract static class Sync extends AbstractQueuedSynchronizer {
             // 写线程数量
             int w = exclusiveCount(c);
             if (c != 0) {
-                // 如果c不为0，w=0 则说明有读锁（state读和写都可以修改），或者w!=0 但是获取写锁的线程不是当前线程（可重入）
+                // 如果c不为0，w=0 则说明有读锁（state读和写都可以修改），或者w!=0 但是获取写锁的线程不是当前线程（可重入），则获取锁失败
                 if (w == 0 || current != getExclusiveOwnerThread())
                     return false;
                 //判断同一线程获取写锁是否超过最大次数（65535）
@@ -354,7 +354,7 @@ static final class FairSync extends Sync {
     }
 
 ```
-以上是ReentrantReadWriteLock 写锁的整个过程。
+以上是ReentrantReadWriteLock 写锁的加锁过程，可以看到基本上与ReentrantLock类似，只是多了一些判断，另外就是写锁也是独占的。
 
 调用 rwlock.readLock().lock();方法时，看一下lock()方法的具体实现：
 ```
@@ -380,7 +380,8 @@ abstract static class Sync extends AbstractQueuedSynchronizer {
                 return -1;
             // 读锁数量
             int r = sharedCount(c);
-            //readerShouldBlock() 方法，如果是公平锁，则判断是否有等待队列，如果是非公平锁，则判断
+            // 1.readerShouldBlock() 方法，如果是公平锁，则判断是否有等待队列，有的话就需要等待，如果是非公平锁，则是判断队列中的下一个节点是否是写锁，如果是则会等待写锁完成，jdk为了避免写线程过分饥渴，而做出的策略
+            // 2.cas获取锁
             if (!readerShouldBlock() &&
                 r < MAX_COUNT &&
                 compareAndSetState(c, c + SHARED_UNIT)) {
@@ -399,20 +400,13 @@ abstract static class Sync extends AbstractQueuedSynchronizer {
                 }
                 return 1;
             }
+            // 在上面的步骤获取失败的情况下，则会自旋尝试获取锁，知道明确的成功或是被，可以看到fullTryAcquireShared方法中的逻辑与上面的执行判断差不多
             return fullTryAcquireShared(current);
         }
 
-        /**
-         * Full version of acquire for reads, that handles CAS misses
-         * and reentrant reads not dealt with in tryAcquireShared.
-         */
+        
         final int fullTryAcquireShared(Thread current) {
-            /*
-             * This code is in part redundant with that in
-             * tryAcquireShared but is simpler overall by not
-             * complicating tryAcquireShared with interactions between
-             * retries and lazily reading hold counts.
-             */
+            
             HoldCounter rh = null;
             for (;;) {
                 int c = getState();
@@ -460,11 +454,25 @@ abstract static class Sync extends AbstractQueuedSynchronizer {
                 }
             }
         }
-    
-        
 }
 
 ```
+以上就是ReentrantReadWriteLock读锁的主要逻辑。结合写锁的加锁过程，可以知道ReentrantReadWriteLock：读读共享，读写互斥，写写互斥，即只有读的时候是共享的，有写的情况还是独占的。
+
+另外写锁和读锁的释放这里就不在多说，有兴趣的可以看一下源码。
+
+通过 ReentrantLock 我们了解到了独占锁，公平和非公平锁这些概念，通过ReentrantReadWriteLock了解了共享锁的概念，AQS中还有一些重要的东西：
+
+1） 获取不到锁的线程如何加入队列的？加入队列后它在干什么？锁释放后线程又怎么出队列获取锁呢？
+
+
+2） AQS同步队列和条件队列有什么关系，条件队列是什么？
+
+
+### 4.什么是CAS？如何实现的？
+
+4.1 CAS：compareAndSwap，判断内存中的值与预期的值是否相等，相等则更新为新值。
+
 
 
 AbstractQueuedSynchronizer（AQS）、ReentrantLock、ReentrantReadWriteLock、compareAndSwap(CAS)

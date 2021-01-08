@@ -463,8 +463,130 @@ abstract static class Sync extends AbstractQueuedSynchronizer {
 
 通过 ReentrantLock 我们了解到了独占锁，公平和非公平锁这些概念，通过ReentrantReadWriteLock了解了共享锁的概念，AQS中还有一些重要的东西：
 
-1） 获取不到锁的线程如何加入队列的？加入队列后它在干什么？锁释放后线程又怎么出队列获取锁呢？
+1） 获取不到锁的线程如何加入队列的？加入队列后线程在干什么？锁释放后线程又怎么出队列获取锁呢？
+当tryAcquire 获取失败时或者acquireShared（共享锁）获取失败时，都会调用addWaiter方法加入队列中，看下面的代码：
+```
+    public final void acquire(int arg) {
+        if (!tryAcquire(arg) &&
+            acquireQueued(addWaiter(Node.EXCLUSIVE), arg))
+            selfInterrupt();
+    }
+    private Node addWaiter(Node mode) {
+        // 通过当前的线程和锁模式新建一个节点
+        Node node = new Node(Thread.currentThread(), mode);
+        // cas尝试将节点插入到队列尾部，成功则返回，失败则调用enq方法自旋插入
+        Node pred = tail;
+        if (pred != null) {
+            node.prev = pred;
+            if (compareAndSetTail(pred, node)) {
+                pred.next = node;
+                return node;
+            }
+        }
+        enq(node);
+        return node;
+    }
+    
+    private Node enq(final Node node) {
+        for (;;) {
+            Node t = tail;
+            if (t == null) { 
+                if (compareAndSetHead(new Node()))
+                    tail = head;
+            } else {
+                node.prev = t;
+                if (compareAndSetTail(t, node)) {
+                    t.next = node;
+                    return t;
+                }
+            }
+        }
+    }
+```
+当调用addWaiter方法加入到队列后，返回该节点并调用acquireQueued方法，这个时候加入到队列中的线程在做什么呢：
+```
+     final boolean acquireQueued(final Node node, int arg) {
+        boolean failed = true;
+        try {
+            boolean interrupted = false;
+            // 循环
+            for (;;) {
+                //获取当前节点的前置节点，如果前置节点是头节点（虚节点），说明当前节点在队列的首部，它会一直尝试获取锁，直到成功或者线程中断
+                final Node p = node.predecessor();
+                if (p == head && tryAcquire(arg)) {
+                    setHead(node);
+                    p.next = null; // help GC
+                    failed = false;
+                    return interrupted;
+                }
+                //如果不是头节点或者是头节点但获取锁失败，则通过前置节点的等待状态判断线程是否需要阻塞，毕竟无限循环资源消耗比较大
+                if (shouldParkAfterFailedAcquire(p, node) &&
+                    parkAndCheckInterrupt())
+                    interrupted = true;
+            }
+        } finally {
+            if (failed)
+                cancelAcquire(node);
+        }
+    }
+    private static boolean shouldParkAfterFailedAcquire(Node pred, Node node) {
+        int ws = pred.waitStatus;
+        if (ws == Node.SIGNAL)
+            //如果前置节点为SIGNAL 则返回true
+            return true;
+        if (ws > 0) {
+            // 大于0说明前置节点已中断或超时取消，需要从队列中删除
+            do {
+                node.prev = pred = pred.prev;
+            } while (pred.waitStatus > 0);
+            pred.next = node;
+        } else {
+            //否则设置前置节点为SIGNAL，并返回失败，在下一次循环后阻塞
+            compareAndSetWaitStatus(pred, ws, Node.SIGNAL);
+        }
+        return false;
+    }
+    // LockSupport.park(this) 阻塞当前线程，线程等待在这里，等到被唤醒时，继续执行循环
+    private final boolean parkAndCheckInterrupt() {
+        LockSupport.park(this);
+        return Thread.interrupted();
+    }
+```
+进入到 acquireQueued 方法后，要么线程获取到锁，要么阻塞在那里或者遇到异常结束，那么线程何时被唤醒呢，看一下锁的释放过程：
 
+```
+    public final boolean release(int arg) {
+        if (tryRelease(arg)) {
+            Node h = head;
+            if (h != null && h.waitStatus != 0)
+                unparkSuccessor(h);
+            return true;
+        }
+        return false;
+    }
+    private void unparkSuccessor(Node node) {
+        // 如果头节点等待状态小于0 则置为0，在上面的加入队列方法中我们知道每个节点的前置节点都被设置为SIGNAL(-1)
+        int ws = node.waitStatus;
+        if (ws < 0)
+            compareAndSetWaitStatus(node, ws, 0);
+
+        //取下一个节点，如果下一个节点不存在或者已被中断等，从后向前搜索可用的节点
+        Node s = node.next;
+        if (s == null || s.waitStatus > 0) {
+            s = null;
+            for (Node t = tail; t != null && t != node; t = t.prev)
+                if (t.waitStatus <= 0)
+                    s = t;
+        }
+        if (s != null)
+            //唤醒后续节点
+            LockSupport.unpark(s.thread);
+    }
+
+``` 
+当锁释放时，唤醒后续节点后，阻塞在LockSupport.park(this); 方法的线程会继续执行，然后再次进入循环获取锁；
+
+以上是加入队列，出队列的整个过程。
 
 2） AQS同步队列和条件队列有什么关系，条件队列是什么？
 

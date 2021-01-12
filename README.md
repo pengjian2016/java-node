@@ -3,9 +3,11 @@
 
 仅供学习与面试使用，写的不好的地方欢迎大家指出。
 
-> 注：基础的内容或者大家都熟知的经常会被问到东西不会说太多，这些去看[javaguide](https://github.com/Snailclimb/JavaGuide)哥的文章就够了，这里是对那些刁钻的或者容易忽略的问题进行补充，大家如果也有面试中的问题可以一块分享。
+> 注1：基础的内容或者大家都熟知的经常会被问到东西不会说太多，这些去看[javaguide](https://github.com/Snailclimb/JavaGuide)哥的文章就够了，这里是对那些刁钻的或者容易忽略的问题进行补充，大家如果也有面试中的问题可以一块分享。
 
-> 注：作者并不是一个技术很高的人，只是近年来开始探寻技术方面的原理，遇到某个技术点就特别想知道到底是如何实现的，最好是从零到有整个过程都能弄明白，虽然看了不少文章，但是个人理解方面还是很欠缺，写下这些文章的时候有些还要借助原文的内容，有些自己描述的也不是特别明确，在此诚恳各位给予帮助，及时指出错误或不准确的地方，谢谢！！！
+> 注2：作者并不是一个技术很高的人，只是近年来开始探寻技术方面的原理，遇到某个技术点就特别想知道到底是如何实现的，最好是从零到有整个过程都能弄明白，虽然看了不少文章，但是个人理解方面还是很欠缺，写下这些文章的时候有些还要借助原文的内容，有些自己描述的也不是特别明确，在此诚恳各位给予帮助，及时指出错误或不准确的地方，谢谢！！！
+
+> 注3：最近也进行过几家大公司的面试，说实话很惭愧，不知不觉已经在小公司待了7年，面试的时候就发现很多都是高级工程师的岗位，有点慌，我自认为没有对应的实力，所以结果就是受了打击，然后想要进一步的学习，开了这个项目。
 
 持续更新中...
 
@@ -24,7 +26,7 @@
    - #### 同步，并发等
       - 锁/并发控制器:
         - [synchronized](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/sync/synchronized.md)，
-        - AbstractQueuedSynchronizer（AQS）、ReentrantLock、ReentrantReadWriteLock、compareAndSwap(CAS)
+        - [AbstractQueuedSynchronizer（AQS）、ReentrantLock、ReentrantReadWriteLock、compareAndSwap(CAS)](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/sync/aqs.md)
       - 线程池：ThreadPoolExecutor
       - ThreadLocal
    - #### jvm

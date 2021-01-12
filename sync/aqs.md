@@ -463,7 +463,7 @@ abstract static class Sync extends AbstractQueuedSynchronizer {
 
 通过 ReentrantLock 我们了解到了独占锁，公平和非公平锁这些概念，通过ReentrantReadWriteLock了解了共享锁的概念，AQS中还有一些重要的东西：
 
-1） 获取不到锁的线程如何加入队列的？加入队列后线程在干什么？锁释放后线程又怎么出队列获取锁呢？
+#### 1） 获取不到锁的线程如何加入队列的？加入队列后线程在干什么？锁释放后线程又怎么出队列获取锁呢？
 当tryAcquire 获取失败时或者acquireShared（共享锁）获取失败时，都会调用addWaiter方法加入队列中，看下面的代码：
 ```
     public final void acquire(int arg) {
@@ -588,13 +588,76 @@ abstract static class Sync extends AbstractQueuedSynchronizer {
 
 以上是加入队列，出队列的整个过程。
 
-2） AQS同步队列和条件队列有什么关系，条件队列是什么？
+#### 2) 条件队列是什么？原理是什么？与同步队列有什么区别？
+
+Condition 是基于 AQS 实现的，Condition 的实现类 ConditionObject 是 AQS 的一个内部类
+
+原理：其内部维护一个条件队列，在获取锁的情况下，线程调用 await，线程会被放置在条件队列中并被阻塞。直到调用 signal、signalAll 唤醒线程，此后线程唤醒，会放入到 AQS 的同步队列，参与争抢锁资源
+
+区别：每个Condition对象都包含一个等待队列。该队列是Condition对象实现等待/通知的关键。调用condition的await方法会使当前线程进入等待队列并释放锁(先加入等待队列再释放锁)同时线程状态转为等待状态。调用condition的signal方法唤醒后会从等待队列挪到同步队列中。
+
+参考：[AQS 都看完了，Condition 原理可不能少](https://juejin.cn/post/6878623561020538893)
 
 
 ### 4.什么是CAS？如何实现的？
 
-4.1 CAS：compareAndSwap，判断内存中的值与预期的值是否相等，相等则更新为新值。
+4.1 CAS：compareAndSwap 三个参数，一个当前内存值 V、旧的预期值 A、即将更新的值 B，当且仅当预期值 A 和内存值 V 相同时，将内存值修改为 B 并返回 true，否则什么都不做，并返回 false。
+
+cas原理：以 AtomicInteger 类为例，重要部分的代码：
+
+```
+    private static final Unsafe unsafe = Unsafe.getUnsafe();
+    private static final long valueOffset;
+
+    static {
+        try {
+            valueOffset = unsafe.objectFieldOffset
+                (AtomicInteger.class.getDeclaredField("value"));
+        } catch (Exception ex) { throw new Error(ex); }
+    }
+
+    private volatile int value;
+
+    public final boolean compareAndSet(int expect, int update) {
+        return unsafe.compareAndSwapInt(this, valueOffset, expect, update);
+    }
+    public final int getAndIncrement() {
+        return unsafe.getAndAddInt(this, valueOffset, 1);
+    }
+    public final int getAndDecrement() {
+        return unsafe.getAndAddInt(this, valueOffset, -1);
+    }
+```
+代码中可以看到，大量的方法都是用到了Unsafe 这个类的方法，在其他很多地方也能看到这个类，那么这个类到底是什么呢？
+
+Unsafe类中的核心方法compareAndSwapInt，也是AtomicInteger中直接或间接使用到的，该方法便是cas的核心，CAS是一条CPU的原子指令（cmpxchg指令），不会造成所谓的数据不一致问题，Unsafe提供的CAS方法底层实现即为CPU指令cmpxchg。
+
+参考：[Java魔法类：Unsafe应用解析](https://tech.meituan.com/2019/02/14/talk-about-java-magic-class-unsafe.html)
+
+CAS 存在的问题：
+
+1. ABA问题。CAS需要在操作值的时候检查内存值是否发生变化，没有发生变化才会更新内存值。但是如果内存值原来是A，后来变成了B，然后又变成了A，那么CAS进行检查时会发现值没有发生变化，但是实际上是有变化的。ABA问题的解决思路就是在变量前面添加版本号，每次变量更新的时候都把版本号加一，这样变化过程就从“A－B－A”变成了“1A－2B－3A”。
+JDK从1.5开始提供了AtomicStampedReference类来解决ABA问题，具体操作封装在compareAndSet()中。compareAndSet()首先检查当前引用和当前标志与预期引用和预期标志是否相等，如果都相等，则以原子方式将引用值和标志的值设置为给定的更新值
+
+2. 循环时间长开销大。CAS操作如果长时间不成功，会导致其一直自旋，给CPU带来非常大的开销
+
+参考：[不可不说的Java“锁”事](https://tech.meituan.com/2018/11/15/java-lock.html)
+
+### 5. LockSupport.part(),Thread.sleep(),wait() 方法之间的区别
+
+#### 5.1 Thread.sleep() 方法
+
+Thread.sleep(time)方法必须传入指定的时间，线程将进入休眠状态，通过jstack输出线程快照的话此时该线程的状态应该是TIMED_WAITING，表示休眠一段时间， 而且持有锁的线程不会释放锁。在规定的休眠时间结束后，自动唤醒自己。
+
+#### 5.2 wait() 方法
+
+该方法在Object中，每个类都有该方法，必须获得锁后，才可以执行该对象的wait方法。否则程序会在运行时抛出IllegalMonitorStateException异常，方法执行后线程进入休眠的同时，会释放持有的该对象的锁，这样其他线程就能在这期间获取到锁。此外只能通过notify()或者notifyAll()方法唤醒该线程，需要注意的是，notify()或者notifyAll()方法只能在wait()方法之后执行才能唤醒线程。
+
+#### 5.3 LockSupport.part() 
+
+LockSupport.part() 方法内部实现依赖与UNSAFE类，原理是通过二元信号量做的阻塞，要注意的是，这个信号量最多只能加到1。我们也可以理解成获取释放许可证的场景。unpark()方法会释放一个许可证，park()方法则是获取许可证。执行park进入休眠后并不会释放持有的锁，当外部线程对阻塞线程调用interrupt方法时，park阻塞的线程也会立刻返回。而且unpark()方法唤醒线程时可以在park()之前。
+
+参考:[Thread.sleep、Object.wait、LockSupport.park 区别](https://blog.csdn.net/u013332124/article/details/84647915)
 
 
-
-AbstractQueuedSynchronizer（AQS）、ReentrantLock、ReentrantReadWriteLock、compareAndSwap(CAS)
+> 本章稍微有点乱，花的时间有点长，一方面比较忙，一方面一会想到这里一会想到那里，涉及的知识点太多，AQS，Lock中还有很多东西都没挖掘，甚至Unsafe都值得单独拿出来写一章。说来惭愧而很多原理性的东西我自己也是一知半解，写完这些内容之后我也只能说了解了个大概，在我心里已经有重写的打算给了，-_-!!!

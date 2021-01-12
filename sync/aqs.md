@@ -596,6 +596,14 @@ Condition 是基于 AQS 实现的，Condition 的实现类 ConditionObject 是 A
 
 区别：每个Condition对象都包含一个等待队列。该队列是Condition对象实现等待/通知的关键。调用condition的await方法会使当前线程进入等待队列并释放锁(先加入等待队列再释放锁)同时线程状态转为等待状态。调用condition的signal方法唤醒后会从等待队列挪到同步队列中。
 
+总结：
+
+调用await方法进行阻塞（从同步队列转化到条件队列）
+
+调用signal或signalAll将条件队列中的节点转移到同步队列。（由条件队列转化为同步队列）
+
+所以，同步队列与条件队列节点可相互转化，一个线程只能存在于两个队列中的一个
+
 参考：[AQS 都看完了，Condition 原理可不能少](https://juejin.cn/post/6878623561020538893)
 
 

@@ -34,7 +34,8 @@ ThreadPoolExecutor的构造函数：
 核心参数:
 - corePoolSize: 核心线程数
 - maximumPoolSize:最大线程数
-- workQueue: 等待队列
+- workQueue: 等待队列（阻塞队列），待执行的任务（线程）会放在这里
+
 其他参数：
 - keepAliveTime：当线程数超过核心线程数时，等待keepAliveTime时间后仍然没有任务要执行时，回收该线程。
 - unit：keepAliveTime等待的时间单位，毫秒，秒，分等
@@ -158,6 +159,8 @@ ThreadPoolExecutor 原理分析：
 
 ![美团有界](https://images.gitee.com/uploads/images/2021/0112/175955_8f42b4a2_8076629.png "屏幕截图.png")
 
+需要说明的是，当使用无界队列时，maximumPoolSize和拒绝策略都没有了意义，因为无界意味着等待队列无限大，可以容得下所以的待提交的任务。
+
 ### 3. 拒绝策略有哪些？
 
 - 丢弃新提交的任务并抛出异常，默认策略；
@@ -167,7 +170,149 @@ ThreadPoolExecutor 原理分析：
 
 ![美团拒绝策略](https://images.gitee.com/uploads/images/2021/0112/180552_124ec43c_8076629.png "屏幕截图.png")
 
-### 4. 线程池解决的是什么问题？
+### 4. 线程池解决的是什么问题？或者是有什么好处？
 
-### 5. 达到最大线程数后线程如果回收？
+- 降低资源消耗：通过池化技术重复利用已创建的线程，降低线程创建和销毁造成的损耗
+- 提高响应速度：任务到达时，无需等待线程创建即可立即执行
+- 提高线程的可管理性：线程是稀缺资源，如果无限制创建，不仅会消耗系统资源，还会因为线程的不合理分布导致资源调度失衡，降低系统的稳定性。使用线程池可以进行统一的分配、调优和监控
+- 提供更多更强大的功能：线程池具备可拓展性，允许开发人员向其中增加更多的功能。比如延时定时线程池ScheduledThreadPoolExecutor，就允许任务延期执行或定期执行
+
+
+### 5. 达到最大线程数后工作线程如何回收呢？
+在execute方法中我们知道，当创建线程执行任务时，实际上会创建Worker并执行，worker本身也是个线程，它也实现了run方法：
+
+```
+private final class Worker
+        extends AbstractQueuedSynchronizer
+        implements Runnable {
+    final Thread thread;
+    
+    Runnable firstTask;
+    
+    // 构造函数
+    Worker(Runnable firstTask) {
+        setState(-1); 
+        // addWorker 时提交的那个要执行的任务
+        this.firstTask = firstTask;
+        // thread为该work
+        this.thread = getThreadFactory().newThread(this);
+    }
+
+    public void run() {
+        // 在上面的代码中我们知道addWorker后会调用w.thread的start方法启动线程，最后会执行run方法
+        runWorker(this);
+    }
+    /*
+        首次提交的任务那个任务firstTask会立即得到执行，执行结束后，下一次循环会调用getTask()方法
+        从等待队列(阻塞队列)中获取任务，如果获取不到任务，即task=null后，会调用processWorkerExit方法退出，即回收该工作线程
+    */
+    final void runWorker(Worker w) {
+        Thread wt = Thread.currentThread();
+        Runnable task = w.firstTask;
+        w.firstTask = null;
+        w.unlock(); // allow interrupts
+        boolean completedAbruptly = true;
+        try {
+            while (task != null || (task = getTask()) != null) {
+                w.lock();
+                
+                if ((runStateAtLeast(ctl.get(), STOP) ||
+                     (Thread.interrupted() &&
+                      runStateAtLeast(ctl.get(), STOP))) &&
+                    !wt.isInterrupted())
+                    wt.interrupt();
+                try {
+                    beforeExecute(wt, task);
+                    Throwable thrown = null;
+                    try {
+                        task.run();
+                    } catch (RuntimeException x) {
+                        thrown = x; throw x;
+                    } catch (Error x) {
+                        thrown = x; throw x;
+                    } catch (Throwable x) {
+                        thrown = x; throw new Error(x);
+                    } finally {
+                        afterExecute(task, thrown);
+                    }
+                } finally {
+                    task = null;
+                    w.completedTasks++;
+                    w.unlock();
+                }
+            }
+            completedAbruptly = false;
+        } finally {
+            processWorkerExit(w, completedAbruptly);
+        }
+    }
+    
+    private Runnable getTask() {
+        boolean timedOut = false; // 
+
+        for (;;) {
+            int c = ctl.get();
+            int rs = runStateOf(c);
+
+            // 线程池状态停止的情况下，需要回收当前线程，运行情况是RUNNING是小于0的
+            if (rs >= SHUTDOWN && (rs >= STOP || workQueue.isEmpty())) {
+                decrementWorkerCount();
+                return null;
+            }
+            // 当前工作线程数
+            int wc = workerCountOf(c);
+
+            // 核心线程数如果允许超时或者工作线程数大于核心线程数的情况下
+            boolean timed = allowCoreThreadTimeOut || wc > corePoolSize;
+            // 如果大于最大线程或者超时了，回收该工作线程，否则一直循环获取任务
+            if ((wc > maximumPoolSize || (timed && timedOut))
+                && (wc > 1 || workQueue.isEmpty())) {
+                if (compareAndDecrementWorkerCount(c))
+                    return null;
+                continue;
+            }
+
+            try {
+                //在大于核心线程数或允许超时时间的情况下，等待keepAliveTime后仍然没获取到任务，则标记timedOut超时，下一次循环可能被回收
+                Runnable r = timed ?
+                    workQueue.poll(keepAliveTime, TimeUnit.NANOSECONDS) :
+                    workQueue.take();
+                if (r != null)
+                    return r;
+                timedOut = true;
+            } catch (InterruptedException retry) {
+                timedOut = false;
+            }
+        }
+    }
+}
+```
+
+### 6. 线程池的几种状态
+
+![来自美团](https://images.gitee.com/uploads/images/2021/0113/101859_0a3a633a_8076629.png "屏幕截图.png")
+
+### 7. 如何在不提交任务的情况下，创建工作线程？
+为什么有这样的问题？，我们知道，线程的创建是耗资源的东西，可能我们的应用刚开始上线的时候没啥问题，但是运行一段时间后内存就爆满了等等，也许就是在运行的过程中创建了过多的线程呢。而上面的源码中我们也知道只有在execute提交任务后才会创建工作线程，当然这只是默认情况下，那么有没有办法在项目启动或者不提交任务的时候就把线程池初始化好呢？
+下面的两个方法：
+
+
+```
+    // 创建一个核心线程
+    public boolean prestartCoreThread() {
+        return workerCountOf(ctl.get()) < corePoolSize &&
+            addWorker(null, true);
+    }
+
+    /**
+     * 启动所有的核心线程
+     *
+     */
+    public int prestartAllCoreThreads() {
+        int n = 0;
+        while (addWorker(null, true))
+            ++n;
+        return n;
+    }
+```
 

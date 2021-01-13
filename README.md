@@ -27,7 +27,7 @@
       - 锁/并发控制器:
         - [synchronized](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/sync/synchronized.md)，
         - [AbstractQueuedSynchronizer（AQS）、ReentrantLock、ReentrantReadWriteLock、compareAndSwap(CAS)](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/sync/aqs.md)
-      - 线程池：ThreadPoolExecutor
+      - [线程池：ThreadPoolExecutor](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/sync/ThreadPoolExecutor.md)
       - ThreadLocal
    - #### jvm
      - jvm内存结构

@@ -28,7 +28,7 @@
         - [synchronized](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/sync/synchronized.md)，
         - [AbstractQueuedSynchronizer（AQS）、ReentrantLock、ReentrantReadWriteLock、compareAndSwap(CAS)](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/sync/aqs.md)
       - [线程池：ThreadPoolExecutor](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/sync/ThreadPoolExecutor.md)
-      - ThreadLocal
+      - [ThreadLocal](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/sync/ThreadLocal.md)
    - #### jvm
      - jvm内存结构
      - java内存模型

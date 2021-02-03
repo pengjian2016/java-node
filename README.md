@@ -32,8 +32,8 @@
    - #### jvm
      - [jvm内存结构](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/jvm/jvmstruct.md)
      - [java内存模型](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/jvm/jvmmodel.md)
-     - 垃圾收集算法和垃圾收集器（CMS和G1）
-     - 类结构、类加载过程、类加载器（双亲委派模型）
+     - [垃圾收集算法和垃圾收集器（CMS和G1）](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/jvm/gc.md)
+     - [类结构、类加载过程、类加载器（双亲委派模型）](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/jvm/class.md)
      - JVM 参数，调优，OOM问题排查
 
 2. ### 框架篇

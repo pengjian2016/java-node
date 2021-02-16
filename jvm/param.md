@@ -69,11 +69,20 @@ GC优化一般步骤可以概括为：确定目标、优化参数、验收结果
 
 系统自带工具如：
 
-jps
-jstats
-jstack 
-jmap -heap
+jps 查看java进程
 
-MAT工具（内存分析工具）：
+jstat 实时打印gc信息等
 
-VM 监控工具：
+jstack 查看线程执行情况，有无死锁
+ 
+jmap 生成堆快照，分析堆内存的使用情况等
+
+图形工具等：
+
+jconsole  
+
+MAT（Memory Analyzer Tool）
+
+VisualVM
+
+参考：[jvm调优工具分析指南](https://juejin.cn/post/6844903501269729288)

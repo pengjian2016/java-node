@@ -17,7 +17,9 @@ SpringBoot是由Pivotal团队在2013年开始研发、2014年4月发布第一个
 ### springboot 启动过程
 
 ### springboot 内置web容器有哪些
-tomcat，jetty，undertow
+tomcat，默认最大线程数200
+
+jetty，undertow
 
 ### springboot中重要的注解
 

@@ -1,3 +1,112 @@
+### 线程有哪几种状态?
+
+- 1. 初始(NEW)：新创建了一个线程对象，但还没有调用start()方法。
+- 2. 运行(RUNNABLE)：Java线程中将就绪（ready）和运行中（running）两种状态笼统的称为“运行”。
+线程对象创建后，其他线程(比如main线程）调用了该对象的start()方法。该状态的线程位于可运行线程池中，等待被线程调度选中，获取CPU的使用权，此时处于就绪状态（ready）。就绪状态的线程在获得CPU时间片后变为运行中状态（running）。
+- 3. 阻塞(BLOCKED)：表示线程阻塞于锁。
+- 4. 等待(WAITING)：进入该状态的线程需要等待其他线程做出一些特定动作（通知或中断）。
+- 5. 超时等待(TIMED_WAITING)：该状态不同于WAITING，它可以在指定的时间后自行返回。
+- 6. 终止(TERMINATED)：表示该线程已经执行完毕。
+
+务必记住这张图：
+
+![输入图片说明](https://images.gitee.com/uploads/images/2021/0303/092048_e2322873_8076629.png "屏幕截图.png")
+
+
+参考：
+
+[Java线程的6种状态及切换](https://blog.csdn.net/pange1991/article/details/53860651)
+
+
+### A，B两个线程如何保证他们的顺序执行？
+1. join方法，B线程中join A线程
+
+```
+public class TestThread {
+    public static void main(String[] args) {
+        try {
+            Thread a = new Thread(new JoinRunnable("A"));
+            a.start();
+            a.join();
+            Thread b = new Thread(new JoinRunnable("B"));
+            b.start();
+        } catch (Exception e) {
+        }
+    }
+
+    public static class JoinRunnable implements Runnable {
+        private String name;
+
+        public JoinRunnable(String name) {
+            this.name = name;
+        }
+
+        @Override
+        public void run() {
+            System.out.println("Run thread:" + this.name);
+        }
+    }
+}
+```
+关于Join的说明：主线程等待子线程的终止。也就是说主线程的代码块中，如果碰到了join()方法，此时主线程需要等待（阻塞），等待子线程结束了(Waits for this thread to die.),才能继续执行join()之后的代码块。所以上面的main方法所在的主线程，需要等到子线程a执行完之后才会继续执行后面的代码。
+
+2. 利用单线程池，提交线程，这样每次只有一个线程会被执行
+
+```
+Thread a = new Thread(new JoinRunnable("A"));
+Thread b = new Thread(new JoinRunnable("B"));
+ExecutorService singleThread = Executors.newSingleThreadExecutor();
+singleThread.submit(a);
+singleThread.submit(b);
+
+```
+单线程池的特点，每次只能执行一个任务，这样，A，B会被按照提交的顺序依次执行
+
+3. 锁和wait，notify方法
+
+```
+    private static Object lock = new Object();
+    private static int state = 0;
+
+    static class ThreadA extends Thread {
+        @Override
+        public void run() {
+            synchronized (lock) {
+                System.out.println("This is A");
+                state++;
+                lock.notifyAll();
+            }
+        }
+    }
+
+    static class ThreadB extends Thread {
+        @Override
+        public void run() {
+            try {
+                synchronized (lock) {
+                    while (state != 1) {
+                        lock.wait();
+                    }
+                    System.out.println("This is B");
+                }
+            } catch (Exception e) {
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        new ThreadA().start();
+        new ThreadB().start();
+    }
+
+```
+
+锁和wait，notify方法 应该是比较基础的方式了，虽然我上面实现的很丑陋，但是大致意思差不多，假如B线程先执行先获得了锁，可是state状态并没有被修改成1的时候，它就会释放锁，等待在那里，知道A执行结束之后才会被唤醒继续执行下去。
+
+
+4. 其他的方法，如利用Lock 和 Condition 精准唤醒线程，Semaphore 信号量等，大家可以自行去专研。
+
+
 # ThreadPoolExecutor
 
 ### 1. 线程池有使用过吗？原理能讲一下吗？

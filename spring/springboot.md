@@ -38,6 +38,73 @@ SpringBoot是由Pivotal团队在2013年开始研发、2014年4月发布第一个
 
 ### springboot 自动装配原理
 
+在 @SpringBootApplication 这个注解里面，有3个重要的注解
+
+```
+@SpringBootConfiguration
+@EnableAutoConfiguration
+@ComponentScan(excludeFilters = { @Filter(type = FilterType.CUSTOM, classes = TypeExcludeFilter.class),
+		@Filter(type = FilterType.CUSTOM, classes = AutoConfigurationExcludeFilter.class) })
+
+```
+
+1. @SpringBootConfiguration 注解里面，没做太多的事情，主要是对@Configuration注解的封装，主要作用是标注这个类配置类，功能与@Configuration一样
+
+2. @ComponentScan 是扫描包的注解，自动扫描符合条件的bean（如@Service、@Controller、@Repository注解的类）加载到容器中
+
+3. @EnableAutoConfiguration 这个注解便是自动装配的关键，在该注解中会去 引入 @Import(AutoConfigurationImportSelector.class) 这个类，它实现了DeferredImportSelector.Group中的process方法其内部会调用getAutoConfigurationEntry()方法，springboot启动得锁时候会找到ImportSelector类并调用process方法，下面主要分析getAutoConfigurationEntry源码（当前基于springboot 2.3.4 如果你发现你看的源码不一样，那可能是版本不一样的原因）：
+
+
+```
+
+protected AutoConfigurationEntry getAutoConfigurationEntry(AnnotationMetadata annotationMetadata) {
+	if (!isEnabled(annotationMetadata)) {
+		return EMPTY_ENTRY;
+	}
+	AnnotationAttributes attributes = getAttributes(annotationMetadata);
+        // getCandidateConfigurations 方法会调用 SpringFactoriesLoader.loadFactoryNames()
+        // 在 loadFactoryNames() 中通过loadSpringFactories()方法加载 META-INF/spring.factories 配置文件
+        // 读取配置文件中的内容后过滤出 org.springframework.boot.autoconfigure.EnableAutoConfiguration 这个key对应的所有value 
+        // 返回的内容即是要加载的所有类，但是并不是所有的模块都能用到，所以下面会进行过滤，过滤掉不满足条件的配置
+	List<String> configurations = getCandidateConfigurations(annotationMetadata, attributes);
+	configurations = removeDuplicates(configurations);
+	Set<String> exclusions = getExclusions(annotationMetadata, attributes);
+	checkExcludedClasses(configurations, exclusions);
+	configurations.removeAll(exclusions);
+        // 对configurations进行过滤，剔除掉@Conditional条件不成立的配置类（比如某个配置可能需要某个特定的类，该类属于某个包，如果未引入包，则会过滤掉）
+	configurations = getConfigurationClassFilter().filter(configurations);
+	fireAutoConfigurationImportEvents(configurations, exclusions);
+	return new AutoConfigurationEntry(configurations, exclusions);
+}
+
+META-INF/spring.factories 文件 org.springframework.boot.autoconfigure.EnableAutoConfiguration 对应的部分内容（太长了）:
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+org.springframework.boot.autoconfigure.admin.SpringApplicationAdminJmxAutoConfiguration,\
+org.springframework.boot.autoconfigure.aop.AopAutoConfiguration,\
+org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration,\
+org.springframework.boot.autoconfigure.batch.BatchAutoConfiguration,\
+org.springframework.boot.autoconfigure.cache.CacheAutoConfiguration,\
+org.springframework.boot.autoconfigure.cassandra.CassandraAutoConfiguration,\
+org.springframework.boot.autoconfigure.context.ConfigurationPropertiesAutoConfiguration,\
+org.springframework.boot.autoconfigure.context.LifecycleAutoConfiguration,\
+org.springframework.boot.autoconfigure.context.MessageSourceAutoConfiguration,\
+org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration,\
+org.springframework.boot.autoconfigure.couchbase.CouchbaseAutoConfiguration,\
+org.springframework.boot.autoconfigure.dao.PersistenceExceptionTranslationAutoConfiguration,\
+....
+
+```
+所以如果面试官问你springboot如果实现自动装配的，可以这样大致的回答：
+
+在@SpringBootApplication  注解下有三个重要的注解，其中有一个@EnableAutoConfiguration注解，它会使用@Import注解引入AutoConfigurationImportSelector.class 这个类，自动装配主要在这个类中完成，首先它会去加载META-INF/spring.factories 配置文件，找到org.springframework.boot.autoconfigure.EnableAutoConfiguration 这个key对应的所有配置，剔除那些不满足条件的配置，剩下的就是要自动装配的类。
+
+
+参考：
+
+[AutoConfigurationImportSelector到底怎么初始化](https://zhuanlan.zhihu.com/p/143912268)
+
+[SpringBoot自动装配原理与源码分析](http://autumn200.com/2020/06/27/spring-boot-autoconfig/)
+
 ### springboot 启动过程
 
 ### springboot 内置web容器有哪些

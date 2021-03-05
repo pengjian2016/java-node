@@ -48,11 +48,11 @@ SpringBoot是由Pivotal团队在2013年开始研发、2014年4月发布第一个
 
 ```
 
-1. @SpringBootConfiguration 注解里面，没做太多的事情，主要是对@Configuration注解的封装，主要作用是标注这个类配置类，功能与@Configuration一样
+1. @SpringBootConfiguration 注解里面，没做太多的事情，主要是对@Configuration注解的封装，主要作用是标注这个类是配置类，功能与@Configuration一样
 
-2. @ComponentScan 是扫描包的注解，自动扫描符合条件的bean（如@Service、@Controller、@Repository注解的类）加载到容器中
+2. @ComponentScan 是扫描包的注解，自动扫描符合条件的bean（如@Service、@Controller、@Repository等等注解的类）加载到容器中
 
-3. @EnableAutoConfiguration 这个注解便是自动装配的关键，在该注解中会去 引入 @Import(AutoConfigurationImportSelector.class) 这个类，它实现了DeferredImportSelector.Group中的process方法其内部会调用getAutoConfigurationEntry()方法，springboot启动得锁时候会找到ImportSelector类并调用process方法，下面主要分析getAutoConfigurationEntry源码（当前基于springboot 2.3.4 如果你发现你看的源码不一样，那可能是版本不一样的原因）：
+3. @EnableAutoConfiguration 这个注解便是自动装配的关键，在该注解中会去 引入 @Import(AutoConfigurationImportSelector.class) 这个类，它实现了DeferredImportSelector.Group中的process方法其内部会调用getAutoConfigurationEntry()方法，springboot启动得时候会找到ImportSelector类并调用process方法，下面主要分析getAutoConfigurationEntry源码（当前基于springboot 2.3.4 如果你发现你看的源码不一样，那可能是版本不一样的原因）：
 
 
 ```
@@ -96,7 +96,7 @@ org.springframework.boot.autoconfigure.dao.PersistenceExceptionTranslationAutoCo
 ```
 所以如果面试官问你springboot如果实现自动装配的，可以这样大致的回答：
 
-在@SpringBootApplication  注解下有三个重要的注解，其中有一个@EnableAutoConfiguration注解，它会使用@Import注解引入AutoConfigurationImportSelector.class 这个类，自动装配主要在这个类中完成，首先它会去加载META-INF/spring.factories 配置文件，找到org.springframework.boot.autoconfigure.EnableAutoConfiguration 这个key对应的所有配置，剔除那些不满足条件的配置，剩下的就是要自动装配的类。
+在@SpringBootApplication  注解下有三个重要的注解，其中有一个@EnableAutoConfiguration注解，它会使用@Import注解引入AutoConfigurationImportSelector.class 这个类，自动装配主要在这个类中完成，它会去加载META-INF/spring.factories 配置文件，找到org.springframework.boot.autoconfigure.EnableAutoConfiguration 这个key对应的所有配置，剔除那些不满足条件的配置，剩下的就是要自动装配的类。
 
 
 参考：
@@ -106,6 +106,56 @@ org.springframework.boot.autoconfigure.dao.PersistenceExceptionTranslationAutoCo
 [SpringBoot自动装配原理与源码分析](http://autumn200.com/2020/06/27/spring-boot-autoconfig/)
 
 ### springboot 启动过程
+
+在我们自定义的Application类的main方法中，会执行下面这样的代码：
+
+```
+SpringApplication.run(MyApplication.class, args);
+```
+启动过程从这里开始，源码如下（当前基于 springboot 2.3.4  ）：
+
+```
+    /**
+     * SpringApplication.run() 方法点击进去之后调用到这里
+     * */
+    public static ConfigurableApplicationContext run(Class<?> primarySource, String... args) {
+        return run(new Class<?>[] { primarySource }, args);
+    }
+    /**
+     * 最后实际调用的构造函数
+     * */
+    public SpringApplication(ResourceLoader resourceLoader, Class<?>... primarySources) {
+        this.resourceLoader = resourceLoader;
+        Assert.notNull(primarySources, "PrimarySources must not be null");
+        this.primarySources = new LinkedHashSet<>(Arrays.asList(primarySources));
+        /**
+         * 确定应用类型，如果有org.springframework.web.reactive.DispatcherHandler 这个类，而没有
+         * org.springframework.web.servlet.DispatcherServlet，也没有org.glassfish.jersey.servlet.ServletContainer
+         * 则认为是 reactive （响应式应用）应用，
+         * 如果有javax.servlet.Servlet 和 org.springframework.web.context.ConfigurableWebApplicationContext
+         * 则认为是 servlet 即web应用
+         * **/
+        this.webApplicationType = WebApplicationType.deduceFromClasspath();
+        /**
+         * 从spring.factories配置文件中获得ApplicationContextInitializer接口的实现类
+         * 设置到 initializers 属性中
+         * */
+        setInitializers((Collection) getSpringFactoriesInstances(ApplicationContextInitializer.class));
+        /**
+         * 从spring.factories配置文件中获得ApplicationListener接口的实现类
+         * 设置到 listeners 属性中
+         * */
+        setListeners((Collection) getSpringFactoriesInstances(ApplicationListener.class));
+        // 获取哪个类调用了main函数，主要用来打印日志
+        this.mainApplicationClass = deduceMainApplicationClass();
+    }
+    
+
+
+    
+
+```
+
 
 ### springboot 内置web容器有哪些
 tomcat，默认最大线程数200

@@ -150,7 +150,71 @@ SpringApplication.run(MyApplication.class, args);
         this.mainApplicationClass = deduceMainApplicationClass();
     }
     
+    /**
+     * 初始化好SpringApplication对象之后，会直接调用run方法
+     * */
+    public ConfigurableApplicationContext run(String... args) {
+        // 主要用于记录run方法执行的时长，调用start记录开始时间，stop计算两个差值
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
+        ConfigurableApplicationContext context = null;
+        // 存放启动过程的异常信息
+        Collection<SpringBootExceptionReporter> exceptionReporters = new ArrayList<>();
+        // 设置 java.awt.headless 模式，默认为true，即无需键盘鼠标这些设备
+        configureHeadlessProperty();
+        // 从spring.factories配置中获取SpringApplicationRunListeners的实现类，并启动监听
+        SpringApplicationRunListeners listeners = getRunListeners(args);
+        listeners.starting();
+        try {
+            // 封装 main方法传递的args 参数
+            ApplicationArguments applicationArguments = new DefaultApplicationArguments(args);
+            // 准备环境，将各个配置环境整合起来，如命令行配置的参数或配置文件配置的参数等所有的配置项
+            ConfigurableEnvironment environment = prepareEnvironment(listeners, applicationArguments);
+            // 设置spring.beaninfo.ignore 为true ，即跳过搜索beaninfo的classes
+            configureIgnoreBeanInfo(environment);
+            // 打印bannner
+            Banner printedBanner = printBanner(environment);
+            // 根据不同的应用类型（webApplicationType）创建ApplicationContext 容器
+            // 在初始化的时候webApplicationType默认的是SERVLET，所以这里创建的是AnnotationConfigServletWebServerApplicationContext
+            context = createApplicationContext();
+            // 从spring.factories配置文件中获取异常报告实例
+            exceptionReporters = getSpringFactoriesInstances(SpringBootExceptionReporter.class,
+                    new Class[] { ConfigurableApplicationContext.class }, context);
+            // 为刚ApplicationContext容器做一些准备工作，如设置上一步初始化好的环境变量到容器中
+            // 对ApplicationContext做后置处理，如设置resourceLoader属性
+            // 调用初始化时生成好的ApplicationContextInitializer实例的initialize方法
+            // 调用SpringApplicationRunListeners 的contextPrepared方法，发送ApplicationContextInitializedEvent事件，表示容器已经准备化好
+            // 从context容器中获取beanFactory，并向beanFactory中注册一些单例bean(applicationArguments，printedBanner)
+            // 加载bean到application context，只是加载了部分bean比如mainApplication这个bean
+            // 调用SpringApplicationRunListeners的contextLoaded 事件，表示容器已加载
+            prepareContext(context, environment, listeners, applicationArguments, printedBanner);
+            //
+            refreshContext(context);
+            //
+            afterRefresh(context, applicationArguments);
+            stopWatch.stop();
+            if (this.logStartupInfo) {
+                new StartupInfoLogger(this.mainApplicationClass).logStarted(getApplicationLog(), stopWatch);
+            }
+            //
+            listeners.started(context);
+            //
+            callRunners(context, applicationArguments);
+        }
+        catch (Throwable ex) {
+            handleRunFailure(context, ex, exceptionReporters, listeners);
+            throw new IllegalStateException(ex);
+        }
 
+        try {
+            listeners.running(context);
+        }
+        catch (Throwable ex) {
+            handleRunFailure(context, ex, exceptionReporters, null);
+            throw new IllegalStateException(ex);
+        }
+        return context;
+    }
 
     
 

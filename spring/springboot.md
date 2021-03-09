@@ -188,17 +188,28 @@ SpringApplication.run(MyApplication.class, args);
             // 加载bean到application context，只是加载了部分bean比如mainApplication这个bean
             // 调用SpringApplicationRunListeners的contextLoaded 事件，表示容器已加载
             prepareContext(context, environment, listeners, applicationArguments, printedBanner);
-            //
+            // 刷新容器，springboot核心方法
+            // 在context刷新前做一些准备工作，如初始化一些属性设置，属性合法性校验和保存容器中的一些早期事件等
+            // 让子类刷新其内部bean factory,实质就是再新建一个DefaultListableBeanFactory类型的bean factory对象
+            // 配置factory的标准容器特性，容器的类加载器和一些后置处理器，如ApplicationContextAwareProcessor 等
+            // 修改应用容器的内部bean factory，在这一步，所有的bean definitions将会被加载，但此时bean还不会被实例化
+            // 执行Bean工厂的后置处理器的相关逻辑
+            // 实例化并注册所有Bean的后置处理，将所有实现了 BeanPostProcessor 接口的类加载到 BeanFactory 中
+            // 初始化国际化相关message，初始化事件广播器
+            // 注册实现了ApplicationListener接口的监听器
+            // 完成容器BeanFactory的初始化，并初始化所有剩余的单例bean
+            // 完成容器的刷新共工作，并且调用生命周期处理器的onRefresh()方法，并且发布ContextRefreshedEvent事件
             refreshContext(context);
-            //
+            // 空方法
             afterRefresh(context, applicationArguments);
+            // 停止计时
             stopWatch.stop();
             if (this.logStartupInfo) {
                 new StartupInfoLogger(this.mainApplicationClass).logStarted(getApplicationLog(), stopWatch);
             }
-            //
+            // 触发SpringApplicationRunListener的started方法，通知spring容器已经启动
             listeners.started(context);
-            //
+            // 调用ApplicationRunner和CommandLineRunner的run方法，实现spring容器启动后需要做的一些东西
             callRunners(context, applicationArguments);
         }
         catch (Throwable ex) {
@@ -207,6 +218,7 @@ SpringApplication.run(MyApplication.class, args);
         }
 
         try {
+            // 发布容器已启动事件，容器已可以接受通信
             listeners.running(context);
         }
         catch (Throwable ex) {
@@ -216,22 +228,72 @@ SpringApplication.run(MyApplication.class, args);
         return context;
     }
 
-    
-
 ```
+springboot 的启动过程比较复杂的，在这里也不可能把源码都拿过来一行行的分析一遍，最好是自己对着源码看一遍，才能记忆深刻。
+
+当然面试的时候我们也不可能给面试官一行一行讲源码，毕竟时间有限，可以把启动过程大致梳理几个点出来：
+
+在@SpringBootApplication 注解的类的main方法中，会调用SpringApplication.run方法，它首先会初始化SpringApplication对象，初始化的时候会设置ApplicationContextInitializer和ApplicationListener对象，之后会调用内部的run方法，发布SpringApplicationRunListeners starting事件，准备相关配置环境，初始化ApplicationContext，然后调用prepareContext设置环境加载一部分bean如mainApplication等，最后会调用refreshContext创建BeanFactory容器，加载并实例化bean，执行Bean的后置处理等。这是springboot启动过程的大致流程。
 
 
 ### springboot 内置web容器有哪些
-tomcat，默认最大线程数200
 
-jetty，undertow
+1. tomcat，默认最大线程数200，IO 模型为 NIO
 
-### springboot中重要的注解
+2. jetty
+
+3. undertow
+
+### springboot中重要的注解有哪些
+
+@Bean, @SpringBootApplication,@Configuration,@Service,@Repositoy,@Controller,@RestController等等
 
 ### 如何实现自定义注解
 
-注解中的方法支持哪些返回类型，8种基本类型，String，Class和他们对应的数组类型，以及枚举类型。
+注解中的方法支持哪些返回类型，8种基本类型加String，Class和他们对应的数组类型，以及枚举类型。
 
+```
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
+public @interface CustomAnnotation {
+    int m1();
+
+    boolean m2();
+
+    double m3();
+
+    char m4();
+
+    long m5();
+
+    float m6();
+
+    short m7();
+
+    byte m8();
+
+    String m9();
+
+    Class m10();
+    
+    int[] m12();
+    
+    String[] m13();
+    
+    Class[] m14();
+
+    enum  m11 {
+        e1,e2
+    }
+}
+
+```
+
+当我们实现自定义注解时，首先定义注解名称，使用@interface 修饰，在该注解上需要引入两个重要的注解，一个是Retention 表示该注解的生效范围，如运行期间（RUNTIME），源码（SOURCE），编译后的class文件（CLASS），另一个是Target，表示注解的使用位置，如在方法上，类上，构造函数，属性等，它可以支持多个位置。
+
+然后在注解中定义方法即可。
+
+### 注解是如何生效的呢
 
 ### spring bean 的生命周期
 

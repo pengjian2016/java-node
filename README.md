@@ -35,9 +35,7 @@
 
 2. ### 框架篇
    - #### spring
-      - [spring IOC，AOP，spring bean 生命周期和作用范围，springboot 启动过程、自动装配过程，如何实现自定义注解、自定义注解方法返回支持哪些类型，注解如何生效的](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/spring/springboot.md)
-      - BeanFactory，ApplicationContext，FactoryBean区别
-      - spring中常用设计模式 
+      - [spring IOC，AOP，spring bean 生命周期和作用范围，springboot 启动过程、自动装配过程，如何实现自定义注解、自定义注解方法返回支持哪些类型，注解如何生效的，BeanFactory，ApplicationContext，FactoryBean区别，常用设计模式 ](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/spring/springboot.md)
    - #### mybatis
    - #### kafka，rocketMQ
      - 消息顺序性如何保证、重复消息问题、消息丢失问题

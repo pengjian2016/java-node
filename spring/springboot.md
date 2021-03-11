@@ -303,4 +303,16 @@ public @interface CustomAnnotation {
 
 ### spring bean 的生命周期
 
+1. spring bean 的生命周期
+
+2. bean的注入方式有哪些，循环依赖问题如何解决的？
+
+3. BeanFactory，ApplicationContext，FactoryBean有什么区别
+
+4. BeanFactory，ApplicationContext是如何管理bean的
+
+
 ### spring aop 和拦截器的区别
+
+
+

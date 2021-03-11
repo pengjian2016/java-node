@@ -305,14 +305,88 @@ public @interface CustomAnnotation {
 
 1. spring bean 的生命周期
 
-2. bean的注入方式有哪些，循环依赖问题如何解决的？
+![输入图片说明](https://images.gitee.com/uploads/images/2021/0311/161520_cfd1405c_8076629.png "屏幕截图.png")
+
+初始化->设置属性->setBeanName（如何实现了BeanNameAware接口）->setBeanFactory (如果实现了BeanFactoryAware接口)->setApplicationContext(如果实现了ApplicationContextAware接口)->预初始化方法postProcessorBeforeInitialization(如果实现了BeanPostProcessor接口)->afterPropertiesSet方法（如果实现了InitializingBean接口）-> 调用自定义的方法init-method（如果指定了） -> 初始化之后的方法postProcessorAfterInitialization(如果实现了BeanPostProcessor接口)->最后是destroy（如果实现了DisposableBean） 和destroy-method方法。
+
+2. spring bean的注入方式有哪些，循环依赖问题如何解决的？
+
+构造函数注入，属性注入
+
+构造函数注入无法解决循环依赖问题（双方都通过构造函数注入对方）
+
+属性注入可以解决循环依赖问题：使用了三级缓存
+
+
+
+以单例为例 DefaultSingletonBeanRegistry ，看一下其中的源码：
+
+```
+public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements SingletonBeanRegistry {
+    
+	/** 一级缓存：用于存放完全初始化好的 bean **/
+	private final Map<String, Object> singletonObjects = new ConcurrentHashMap<>(256);
+
+	/** 二级缓存：存放原始的 bean 对象（已经初始化但是尚未填充属性），用于解决循环依赖 */
+	private final Map<String, ObjectFactory<?>> singletonFactories = new HashMap<>(16);
+
+	/** 三级级缓存：存放 bean 工厂对象，用于解决循环依赖 */
+	private final Map<String, Object> earlySingletonObjects = new ConcurrentHashMap<>(16);
+        
+        @Nullable
+	protected Object getSingleton(String beanName, boolean allowEarlyReference) {
+		// 先从一级缓存查找，如果没有，判断当前对象是否正在初始化，如果该bean正在创建中，说明发生了循环依赖
+		Object singletonObject = this.singletonObjects.get(beanName);
+		if (singletonObject == null && isSingletonCurrentlyInCreation(beanName)) {
+                        // 从二级缓存中查找，如果找到就返回，否则从三级缓存中查找
+			singletonObject = this.earlySingletonObjects.get(beanName);
+			if (singletonObject == null && allowEarlyReference) {
+				synchronized (this.singletonObjects) {
+					// 
+					singletonObject = this.singletonObjects.get(beanName);
+					if (singletonObject == null) {
+						singletonObject = this.earlySingletonObjects.get(beanName);
+						if (singletonObject == null) {
+							ObjectFactory<?> singletonFactory = this.singletonFactories.get(beanName);
+							if (singletonFactory != null) {
+								singletonObject = singletonFactory.getObject();
+								this.earlySingletonObjects.put(beanName, singletonObject);
+								this.singletonFactories.remove(beanName);
+							}
+						}
+					}
+				}
+			}
+		}
+		return singletonObject;
+	} 
+}
+
+```
+假如A B两个对象，A中有B对象，B中有A对象，首先初始化A，并提前暴露放在二级缓存中，设置A的属性时，发现B对象又依赖A对象，那么初始化B的时候从二级缓存中拿到A，B初始化完成，放入到一级缓存，继续初始化A，从一级缓存中获取到B，完成初始化。
+
 
 3. BeanFactory，ApplicationContext，FactoryBean有什么区别
+
+![输入图片说明](https://images.gitee.com/uploads/images/2021/0311/173813_e57cf1e5_8076629.png "屏幕截图.png")
+
+上图可以看到ApplicationContext 继承自BeanFactory接口，属于BeanFactory的子类
+
+BeanFactory 是IOC容器的核心接口，负责生产和管理bean，采用的是延迟加载形式来注入Bean，当用到某个bean的时候，才对该Bean进行加载实例化，这样的话不能提前发现配置上的问题
+
+ApplicationContext 有BeanFactory 派生而来，它也是接口，不仅支持BeanFactory的所有功能，还提供了额外的功能如国际化，文件访问等。它在容器启动时会初始化加载好所有的bean，好处是可以提前发现配置上的问题，坏处是占用空间。通常情况下使用 ApplicationContext
+
+FactoryBean 本质上还是一个bean，只是有些特殊，它是一个工厂接口，用户可以通过实现该接口定制实例化Bean的逻辑
 
 4. BeanFactory，ApplicationContext是如何管理bean的
 
 
-### spring aop 和拦截器的区别
+### 过滤器(filter)、拦截器(interceptor)、和AOP的区别
 
+过滤器(filter)拦截web请求的url地址，只是适用于web中，依赖于Servlet容器，利用Java的回调机制进行实现。可以拦截到请求和响应的过程，做一些额外的处理，主要做过滤，认证等
+
+拦截器(interceptor) 拦截 url请求，主要有三个方法preHandle，postHandle，afterCompletion，主要做国际化，主题更换，过滤等
+
+AOP 面向切面，更加细粒度的控制，如拦截包、类、方法等，如事务，日志等。
 
 

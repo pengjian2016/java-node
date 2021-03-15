@@ -303,13 +303,13 @@ public @interface CustomAnnotation {
 
 ### spring bean 的生命周期
 
-1. spring bean 的生命周期
+#### 1. spring bean 的生命周期
 
 ![输入图片说明](https://images.gitee.com/uploads/images/2021/0311/161520_cfd1405c_8076629.png "屏幕截图.png")
 
 初始化->设置属性->setBeanName（如何实现了BeanNameAware接口）->setBeanFactory (如果实现了BeanFactoryAware接口)->setApplicationContext(如果实现了ApplicationContextAware接口)->预初始化方法postProcessorBeforeInitialization(如果实现了BeanPostProcessor接口)->afterPropertiesSet方法（如果实现了InitializingBean接口）-> 调用自定义的方法init-method（如果指定了） -> 初始化之后的方法postProcessorAfterInitialization(如果实现了BeanPostProcessor接口)->最后是destroy（如果实现了DisposableBean） 和destroy-method方法。
 
-2. spring bean的注入方式有哪些，循环依赖问题如何解决的？
+#### 2. spring bean的注入方式有哪些，循环依赖问题如何解决的？
 
 构造函数注入，属性注入
 
@@ -366,7 +366,7 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 假如A B两个对象，A中有B对象，B中有A对象，首先初始化A，并提前暴露放在二级缓存中，设置A的属性时，发现B对象又依赖A对象，那么初始化B的时候从二级缓存中拿到A，B初始化完成，放入到一级缓存，继续初始化A，从一级缓存中获取到B，完成初始化。
 
 
-3. BeanFactory，ApplicationContext，FactoryBean有什么区别
+#### 3. BeanFactory，ApplicationContext，FactoryBean有什么区别
 
 ![输入图片说明](https://images.gitee.com/uploads/images/2021/0311/173813_e57cf1e5_8076629.png "屏幕截图.png")
 
@@ -377,8 +377,6 @@ BeanFactory 是IOC容器的核心接口，负责生产和管理bean，采用的�
 ApplicationContext 有BeanFactory 派生而来，它也是接口，不仅支持BeanFactory的所有功能，还提供了额外的功能如国际化，文件访问等。它在容器启动时会初始化加载好所有的bean，好处是可以提前发现配置上的问题，坏处是占用空间。通常情况下使用 ApplicationContext
 
 FactoryBean 本质上还是一个bean，只是有些特殊，它是一个工厂接口，用户可以通过实现该接口定制实例化Bean的逻辑
-
-4. BeanFactory，ApplicationContext是如何管理bean的
 
 
 ### 过滤器(filter)、拦截器(interceptor)、和AOP的区别

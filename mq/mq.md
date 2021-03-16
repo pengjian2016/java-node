@@ -1,7 +1,11 @@
+### Kafka、RocketMQ、RabbitMQ
+
 ### 消息丢失问题
 
 ### 消息重复问题
 
 ### 消息顺序问题
 
-### rabbitmq、rocketmq、kafkad对比
+### 消息堆积问题
+
+### 消息重新消费问题

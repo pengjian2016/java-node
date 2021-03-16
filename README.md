@@ -1,9 +1,8 @@
 # java高级工程师、技术专家、架构师等职位面试题
  
-
 仅供学习与面试使用，写的不好的地方欢迎大家指出。
 
-> 注1：基础的内容或者大家都熟知的经常会被问到东西不会说太多，这些去看[javaguide](https://github.com/Snailclimb/JavaGuide)哥的文章就够了，这里是对那些刁钻的或者容易忽略的问题进行补充，大家如果也有面试中的问题可以一块分享。
+> 注1：基础的内容或者大家都熟知的经常会被问到的东西去看[javaguide](https://github.com/Snailclimb/JavaGuide)哥的文章就够了，当然本人能力有限不可能把各个方面都研究的很透彻，如果有错误的地方，欢迎指出，如果您也有面试方面的东西可以一块分享。
 
 
 持续更新中...
@@ -35,15 +34,15 @@
 
 2. ### 框架篇
    - #### spring
-      - [spring IOC，AOP，spring bean 生命周期和作用范围，springboot 启动过程、自动装配过程，如何实现自定义注解、自定义注解方法返回支持哪些类型，注解如何生效的，BeanFactory，ApplicationContext，FactoryBean区别，常用设计模式 ](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/spring/springboot.md)
+      - [spring IOC，AOP，spring bean 生命周期和作用范围，springboot 启动过程、自动装配过程，如何实现自定义注解、自定义注解方法返回支持哪些类型，注解如何生效的，BeanFactory，ApplicationContext，FactoryBean区别 ](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/spring/springboot.md)
    - #### mybatis
    - #### kafka，rocketMQ
-     - 消息顺序性如何保证、重复消息问题、消息丢失问题
+     - 消息顺序性如何保证、重复消息问题、消息丢失问题、消息对接问题
      - kafka集群原理
    - #### zookeeper
      - zookeeper 在kafka中的作用
      - 分布式锁实现的原理
-     - 集群
+     - 集群实现原理
 
    - #### redis
      - redis 数据类型及使用场景，布隆过滤器
@@ -96,4 +95,6 @@
    - Spark
    - docker
    - Kubernetes
+
+8. ### 代码审查如何优化代码等
 

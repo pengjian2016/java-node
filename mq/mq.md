@@ -17,12 +17,27 @@
 
 [高并发架构系列：Kafka、RocketMQ、RabbitMQ的优劣势比较](https://zhuanlan.zhihu.com/p/54450453)
 
+#### kafka 
+
+
 
 ### 消息丢失问题
 
 消息丢失分为两种情况：
 
 #### 1. 生产者丢失消息的情况
+
+生产者发送消息后，可能由于网络等原因导致消息实际上并没有成功发送，从而造成丢失问题。
+
+Kafka 消息丢失解决：
+
+- 设置 acks = all（-1），表示所有副本都收到消息后才确认成功
+- 设置 replication.factor > 1，要求每个 partition 必须有至少 2 个副本
+- 设置 min.insync.replicas > 1，消息至少要被写入到 2 个副本才算是被成功发送
+
+RocketMQ 消息丢失解决：
+
+RabbitMQ 消息丢失解决：
 
 
 #### 2. 生产者丢失消息的情况

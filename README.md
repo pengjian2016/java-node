@@ -13,6 +13,7 @@
      - [ClassLoader 和 Class.forName() 的区别](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/java%E5%9F%BA%E7%A1%80/classloader%E5%92%8Cclassforname.md)
      - [java 动态代理过程](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/java%E5%9F%BA%E7%A1%80/%E5%8A%A8%E6%80%81%E4%BB%A3%E7%90%86.md)
      - [java 8 新特性面试点](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/java%E5%9F%BA%E7%A1%80/java8.md)
+     - 一个Java对象占用多大内存
 
    - #### 集合模块
       - [HashMap与HashSet](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/collection/HashMap.md)
@@ -37,7 +38,7 @@
       - [spring IOC，AOP，spring bean 生命周期和作用范围，springboot 启动过程、自动装配过程，如何实现自定义注解、自定义注解方法返回支持哪些类型，注解如何生效的，BeanFactory，ApplicationContext，FactoryBean区别 ](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/spring/springboot.md)
    - #### mybatis
    - #### kafka，rocketMQ
-     - 消息顺序性如何保证、重复消息问题、消息丢失问题、消息对接问题
+     - [消息顺序性如何保证、重复消息问题、消息丢失问题、消息堆积问题](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/mq/mq.md)
      - kafka集群原理
    - #### zookeeper
      - zookeeper 在kafka中的作用

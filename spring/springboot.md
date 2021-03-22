@@ -36,6 +36,43 @@ SpringBoot是由Pivotal团队在2013年开始研发、2014年4月发布第一个
 
 区别：springmvc更加专注于web项目，springboot更倾向于微服务接口等（前后端分离，移动端接口等）
 
+### springboot 配置文件加载顺序（优先级）？
+
+以下为一个简单的springboot项目结构：
+
+```
+project
+|--config
+|----application.properties or yml 配置文件1
+|--application.properties or yml  配置文件2
+|--src
+|----main
+|------java
+|------resource
+|--------config
+|----------application.properties or yml  配置文件3
+|--------application.properties or yml  配置文件4
+```
+
+启功时加载顺序为 4、3、2、1
+
+但是配置文件的优先级覆盖却是反过来的，即：1>2>3>4
+
+假如4、3、2、1中都有一项配置为：
+```
+# 配置文件4
+server.port=8084
+# 配置文件3
+server.port=8083
+# 配置文件2
+server.port=8082
+# 配置文件1
+server.port=8081
+```
+
+那么该配置的最后至应该是server.port=8081
+
+
 ### springboot 自动装配原理
 
 在 @SpringBootApplication 这个注解里面，有3个重要的注解

@@ -13,7 +13,7 @@
      - [ClassLoader 和 Class.forName() 的区别](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/java%E5%9F%BA%E7%A1%80/classloader%E5%92%8Cclassforname.md)
      - [java 动态代理过程](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/java%E5%9F%BA%E7%A1%80/%E5%8A%A8%E6%80%81%E4%BB%A3%E7%90%86.md)
      - [java 8 新特性面试点](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/java%E5%9F%BA%E7%A1%80/java8.md)
-     - 一个Java对象占用多大内存
+     
 
    - #### 集合模块
       - [HashMap与HashSet](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/collection/HashMap.md)
@@ -32,6 +32,7 @@
      - [垃圾收集算法和垃圾收集器（CMS，G1，ZGC）](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/jvm/gc.md)
      - [类结构、类加载过程、类加载器（双亲委派模型）](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/jvm/class.md)
      - [JVM 参数，调优，OOM问题排查](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/jvm/param.md)
+     - [一个Java对象占用多大内存](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/java%E5%9F%BA%E7%A1%80/object.md)
 
 2. ### 框架篇
    - #### spring

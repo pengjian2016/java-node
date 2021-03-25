@@ -62,21 +62,15 @@ RabbitMQ 消息丢失解决：
 
 ##### 2. 消费者丢失消息的情况
 
-kafka
 
-kafka 消费方式分为自动提交和手动提交两种，自动提交的机制是根据一定的时间间隔，将收到的消息进行commit，commit过程和消费消息的过程是异步的，可能出现业务处理消息的过程中出现异常等，导致消息未处理成功，然而已经提交了。
+- kafka 消费方式分为自动提交和手动提交两种，自动提交的机制是根据一定的时间间隔，将收到的消息进行commit，commit过程和消费消息的过程是异步的，可能出现业务处理消息的过程中出现异常等，导致消息未处理成功，然而已经提交了。
 
 解决这种情况可以将自动提交改为手动提交，当我们正真处理完业务后才进行提交。不过这样又会带来新的问题，假如我们的业务处理成功了，而在commit的时候提交失败，这就会导致消息重复消费问题。这个在下面的小节中处理。
 
 
-RocketMQ 
+- RocketMQ 在消费者接受到消息后，处理成功时才返回 ConsumeConcurrentlyStatus.CONSUME_SUCCESS 状态，只有返回成功状态才认为消费成功。
 
-rocketmq 在消费者接受到消息后，处理成功时才返回 ConsumeConcurrentlyStatus.CONSUME_SUCCESS 状态，只有返回成功状态才认为消费成功。
-
-
-RabbitMQ 
-
-与kafka类似，它也有自动确认机制，关闭自动ack，变成手动ack即可。
+- RabbitMQ 与kafka类似，它也有自动确认机制，关闭自动ack，变成手动ack即可。
 
 ### 消息重复问题
 
@@ -89,8 +83,17 @@ RabbitMQ
 
 有时候我们希望消息有顺序性，比如一笔订单，现有初始化消息才能有确认消息，这种情况如何保证呢？
 
+- Kafka 中一个topic对应多个partition，每个partition下是有顺序的，一个partition只能被一个消费者消费，所以，可以将消息发送到相同的partition中，当然这只能保证局部顺序，如果希望全局顺序，需要保证：全局只有一个生产者，一个消费者（或者是一个消费线程），全局一个分区（partition）。
 
+- RocketMQ 也是类似的原理，消息发送到相同的Queue（分区）中，每个Queue中的消息是有顺序的。
 
+- RabbitMQ  把需要保证顺序的数据发到同一个Queue里
+
+参考：
+
+[RocketMQ顺序消费](https://www.cnblogs.com/qdhxhz/p/11134903.html)
+
+[【RabbitMQ】如何保证消息的顺序性+解决消息积压+设计消息队列中间件](https://blog.csdn.net/qq_26545305/article/details/108203087)
 
 ### 消息堆积问题
 

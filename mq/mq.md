@@ -17,12 +17,6 @@
 
 [高并发架构系列：Kafka、RocketMQ、RabbitMQ的优劣势比较](https://zhuanlan.zhihu.com/p/54450453)
 
-##### kafka 
-
-##### RabbitMQ
-
-##### RocketMQ
-
 ### 消息丢失问题
 
 消息丢失分为两种情况：
@@ -99,7 +93,29 @@ RabbitMQ 消息丢失解决：
 
 生产者发送了大量的消息，消费者来不及处理，导致消息大量堆积。
 
-- kafka
+生产环境中，我们不可能把生产者停掉等消费者消费完了消息之后再起，但是消息又再不断产生，紧急处理手段：
 
+- 1. 降低生产者发送速度，比如限流等，当然这会导致一部分用户请求失败，体验不好；
+- 2. 增加partition（当然也不能过多），增加消费者，每个消费者也使用多线程处理任务，如果还不能解决问题，则新建topic，让消息都发送到这个新的topic中，部署相应的消费者，后续通过写程序将那些过期或者未消费的消息抓取到过来；
+
+事后分析消息堆积的原因，消费业务是否已经达到了瓶颈，各个环节有没有问题等。
 
 ### 消息重新消费问题
+
+消息已经被正常消费过了，但由于某些原因（面试官就想这么问）需要重新消费消息，这个应该怎么办呢？
+
+- kafka中，每个partition下的消息都有一个offset，如果要重新消费某些消息，可以指定offset，当然也可以用新的groupid从头开始消费等
+- RocketMQ 中可以指定setConsumeTimestamp，消费时间，从这个时间点之后继续消费等；
+
+参考：
+
+[Kafka之重新消费数据](https://blog.csdn.net/usagoole/article/details/82813091)
+
+[RocketMQ消费位置](https://my.oschina.net/mingxungu/blog/3083953)
+
+
+##### kafka 集群
+
+##### RabbitMQ 集群
+
+##### RocketMQ 集群

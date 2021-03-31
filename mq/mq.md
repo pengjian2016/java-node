@@ -114,7 +114,61 @@ RabbitMQ 消息丢失解决：
 [RocketMQ消费位置](https://my.oschina.net/mingxungu/blog/3083953)
 
 
-##### kafka 集群
+##### kafka 
+
+相关概念
+
+Broker ： 安装Kafka服务的那台集群就是一个broker（broker的id要全局唯一）
+
+Producer：消息的生产者，负责将数据写入到broker中（push方式）
+
+Consumer：消息的消费者，负责从kafka中读取数据（pull）
+
+Topic:主题，相当于是数据的一个分类，不同topic存放不同的数据
+
+replication：副本，数据保存多少份（保证数据不丢）
+
+partition：分区，是一个物理分区，一个分区就是一个文件，一个topic可以有一到多个分区，每一个分区都有自己的副本。
+
+Consumer Group：消费者组，一个topic可以有多个消费者同时消费，多个消费者如果在一个消费者组中，那么它们不会消费相同分区下的消息，即一个分区只会被同一个组下的一个消息者消费，一个消费者却可以同时消费多个分区。
+
+broker是服务，可以有多个topic，每个topic可有多个partion，不同的partion可以分布到不同的broker上，所以天然支持集群。
+
+Broker集群中，会有一个leader（controller leader），负责管理整个集群中分区和副本的状态和选举partition leader
+
+partion可以看作一个有序的队列，里面的数据是储存在硬盘中的，追加式的。partition的作用就是提供分布式的扩展，一个topic可以有许多partions，多个partition可以并行处理数据，所以可以处理相当量的数据。只有partition的leader才会进行读写操作，folower仅进行复制，客户端是感知不到的。
+
+
+Kafka会在Zookeeper上针对每个Topic维护一个称为ISR（in-sync replica，已同步的副本）的集合，该集合中是一些分区的副本。只有当这些副本都跟Leader中的副本同步了之后，kafka才会认为消息已提交，并反馈给消息的生产者。如果这个集合有增减，kafka会更新zookeeper上的记录。如果某个分区的Leader不可用，Kafka就会从ISR集合中选择一个副本作为新的Leader
+
+kafka集群中有2种leader，一种是broker的leader即controller leader，还有一种就是partition的leader：
+
+Controller leader
+当broker启动的时候，都会创建KafkaController对象，但是集群中只能有一个leader对外提供服务，这些每个节点上的KafkaController会在指定的zookeeper路径下创建临时节点，只有第一个成功创建的节点的KafkaController才可以成为leader，其余的都是follower。当leader故障后，所有的follower会收到通知，再次竞争在该路径下创建节点从而选举新的leader（关于zookeeper的创建与监听变化等，将在zookeeper那一章节介绍）
+
+Partition leader 
+
+由controller leader执行，从Zookeeper中读取当前分区的所有ISR(in-sync replicas)集合，调用配置的分区选择算法选择分区的leader
+
+##### Kafka 消息是采用 Pull 模式，还是 Push 模式?
+
+Kafka 遵循了一种大部分消息系统共同的传统的设计：producer(生产者) 将消息推送到 broker （push） ，consumer（消费者） 从 broker 拉取消息(pull)
+
+##### Kafka零拷贝
+
+
+
+
+
+参考：
+
+[八年面试生涯，整理了一套Kafka面试题](https://juejin.cn/post/6844903889003610119)
+
+[数据一致性 kafka 是保存副本 leader读写，follower 只备份 而 zookeeper是 leader 读写，follower负责读](https://www.cnblogs.com/aspirant/p/9179045.html)
+
+[Kafka集群原理讲解及分区机制](https://blog.csdn.net/weixin_43866709/article/details/88989349)
+
+[kafka集群 leader选举机制](https://my.oschina.net/u/3070368/blog/4338739)
 
 ##### RabbitMQ 集群
 

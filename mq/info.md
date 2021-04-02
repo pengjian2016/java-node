@@ -113,10 +113,41 @@ kafka作为MQ也好，作为存储层也好，无非是两个重要功能，一�
 
 [Kafka零拷贝](https://blog.csdn.net/ljheee/article/details/99652448)
 
-##### RabbitMQ 集群
+##### RocketMQ 高可用
 
-待完善...
+RocketMQ分布式集群是通过Master和Slave的配合达到高可用性的。
 
-##### RocketMQ 集群
+Master和Slave的区别：在Broker的配置文件中，参数brokerId的值为0表明这个Broker是Master，大于0表明这个Broker是Slave，同时brokerRole参数也会说明这个Broker是Master还是Slave。
 
-待完善...
+Master角色的Broker支持读和写，Slave角色的Broker仅支持读，也就是 Producer只能和Master角色的Broker连接写入消息；Consumer可以连接 Master角色的Broker，也可以连接Slave角色的Broker来读取消息。
+
+
+消息生产的高可用：创建topic时，把topic的多个message queue创建在多个broker组上。这样当一个broker组的master不可用后，producer仍然可以给其他组的master发送消息。 rocketmq目前还不支持主从切换，需要手动切换
+
+消息消费的高可用：consumer并不能配置从master读还是slave读。当master不可用或者繁忙的时候consumer会被自动切换到从slave读。这样当master出现故障后，consumer仍然可以从slave读，保证了消息消费的高可用
+
+参考：
+
+[RocketMQ高可用性机制](https://juejin.cn/post/6854573208772247565)
+
+##### RabbitMQ 高可用
+RabbitMQ 集群方案分为：
+
+普通模式：
+	- 1、RabbitMQ在多台服务器启动实例、每台服务器一个实例、当你创建queue时、queue（元数据+具体数据）只会落在一台RabbitMQ实例上、但是集群中每个实例都会同步queue的元数据（元数据：真实数据的描述如具体位置等）。
+	- 2、当用户消费时如果连接的是另外一个实例，当前实例会根据同步的元数据找到具体的数据所在的实例从其上把具体数据拉过来消费。
+
+缺点： 存放数据的queue的实例宕机后，会导致其它实例无法从该实例来拉取数据
+
+镜像模式：在普通模式基础上做了改进，通过主节点把消息同步到每个节点的queue中去，如果主节点脱机了，则会从从节点中选举新的主节点，这就保证了高可用。
+
+缺点： 性能开销太大，消息同步到所有的节点服务器会导致网络带宽压力和消耗很严重；
+
+这种模式没有扩展性可言，如果你某个queue的负载很高，你加机器，新增的机器也包含了这个queue的所有数据，并没有办法线性扩展你的queue.
+   
+参考:
+
+[如何保证消息队列（RabbitMQ）的高可用](https://segmentfault.com/a/1190000023008259)
+
+
+以上三种MQ 实际工作中可能就用到其中的一种，选一个你熟悉的仔细研究，弄懂它的原理，这样面试的时候也就不用怕了。

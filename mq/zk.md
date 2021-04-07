@@ -92,6 +92,10 @@ Multi-Paxos通过改变Prepare阶段的作用范围至后面Leader提交的所�
 
 # Zab 协议
 
+# 分布式锁
+
+# 集群
+
 
 参考:
 

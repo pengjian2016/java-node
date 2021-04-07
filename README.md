@@ -43,9 +43,7 @@
      - [消息顺序性如何保证、重复消息问题、消息丢失问题、消息堆积问题](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/mq/mq.md)
      - [kafka，rocketMQ，rabbitmq 集群](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/mq/info.md)
    - #### zookeeper
-     - zookeeper 介绍
-     - 分布式锁实现的原理
-     - 集群实现原理
+     - [zookeeper 数据结构、Paxos算法，Zab协议，分布式锁，集群](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/mq/zk.md)
 
    - #### redis
      - redis 数据类型及使用场景，布隆过滤器

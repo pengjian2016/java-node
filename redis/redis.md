@@ -12,7 +12,7 @@ redis 在线测试工具https://try.redis.io/ 如果你对redis的命令等不�
 |  zset  | 有序集合，又称SortedSet，一方面它是一个 set，保证了内部 value 的唯一性，另一方面它可以为每个 value 赋予一个 score 值，用来代表排序的权重，其内部是一个跳跃表的数据结构，常用命令：zadd key score value 添加元素，zrange key start end 获取范围内的元素  | 常用来做排行榜，电话号码簿  |
 
 
-#### string
+### string
 
 redis中 string 实际的结构为 redisObject+sdshdr
 
@@ -96,7 +96,7 @@ sdshdr 扩容策略：
 
 sdshdr 缩容和惰性空间释放：
 
-- 当某些操作后，减少了原有字符串大小，sds并不会立即重新释放空间，重新分配内存，而是继续保留那么多空间，说不定下次就用上了。它会修改len
+- 当某些操作后，减少了原有字符串大小，sds并不会立即重新释放空间，重新分配内存，而是继续保留那么多空间，说不定下次就用上了，它会修改len
 
 c语言中也有字符串，为什么不直接使用，而是新定义了sdshdr ？
 
@@ -118,20 +118,23 @@ redis在系统中的角色越来越重要，面试也越来越深入，我们需
 [深入浅出Redis之sds](http://wzmmmmj.com/2020/07/12/redis-sds/)
 
 
-#### list
+### list
 
-#### hash
+
+
+
+### hash
 
 底层实现，rehash过程
 
-#### set
+### set
 
-#### zset
+### zset
 
-#### 如何批量删除key？
+### 如何批量删除key？
 
-#### redis中的 布隆过滤器
+### redis中的 布隆过滤器
 
-#### redis中的 geo
+### redis中的 geo
 
-#### redis中的HyperLogLog
+### redis中的HyperLogLog

@@ -120,7 +120,131 @@ redis在系统中的角色越来越重要，面试也越来越深入，我们需
 
 ### list
 
+从源码中看一下list的入口方法：
 
+```
+//list lpush 命令：https://github.com/redis/redis/blob/6.2/src/t_list.c
+void lpushCommand(client *c) {
+    pushGenericCommand(c,LIST_HEAD,0);
+}
+void pushGenericCommand(client *c, int where, int xx) {
+    int j;
+
+    robj *lobj = lookupKeyWrite(c->db, c->argv[1]);
+    if (checkType(c,lobj,OBJ_LIST)) return;
+    if (!lobj) {
+        if (xx) {
+            addReply(c, shared.czero);
+            return;
+        }
+
+        lobj = createQuicklistObject();
+        quicklistSetOptions(lobj->ptr, server.list_max_ziplist_size,
+                            server.list_compress_depth);
+        dbAdd(c->db,c->argv[1],lobj);
+    }
+
+    for (j = 2; j < c->argc; j++) {
+        listTypePush(lobj,c->argv[j],where);
+        server.dirty++;
+    }
+
+    addReplyLongLong(c, listTypeLength(lobj));
+
+    char *event = (where == LIST_HEAD) ? "lpush" : "rpush";
+    signalModifiedKey(c,c->db,c->argv[1]);
+    notifyKeyspaceEvent(NOTIFY_LIST,event,c->argv[1],c->db->id);
+}
+
+//quicklist定义：https://github.com/redis/redis/blob/6.2/src/quicklist.h
+// quicklistNode is a 32 byte struct describing a ziplist for a quicklist
+typedef struct quicklistNode {
+    struct quicklistNode *prev;
+    struct quicklistNode *next;
+    unsigned char *zl;
+    unsigned int sz;             /* ziplist size in bytes */
+    unsigned int count : 16;     /* count of items in ziplist */
+    unsigned int encoding : 2;   /* RAW==1 or LZF==2 */
+    unsigned int container : 2;  /* NONE==1 or ZIPLIST==2 */
+    unsigned int recompress : 1; /* was this node previous compressed? */
+    unsigned int attempted_compress : 1; /* node can't compress; too small */
+    unsigned int extra : 10; /* more bits to steal for future usage */
+} quicklistNode;
+
+typedef struct quicklistLZF {
+    unsigned int sz; /* LZF size in bytes*/
+    char compressed[];
+} quicklistLZF;
+typedef struct quicklist {
+    quicklistNode *head;
+    quicklistNode *tail;
+    unsigned long count;        /* total count of all entries in all ziplists */
+    unsigned long len;          /* number of quicklistNodes */
+    int fill : QL_FILL_BITS;              /* fill factor for individual nodes */
+    unsigned int compress : QL_COMP_BITS; /* depth of end nodes not to compress;0=off */
+    unsigned int bookmark_count: QL_BM_BITS;
+    quicklistBookmark bookmarks[];
+} quicklist;
+
+```
+
+list数据类型是由quicklist 实现，而quicklist 内部维护了quicklistNode 结构的头节点和尾节点，看一下quicklistNode 内部结构：
+- prev，next 前驱和后续节点的指针
+- zl 实际存储的数据，如果当前节点的数据没有压缩，那么它指向一个ziplist结构；否则，它指向一个quicklistLZF结构
+- sz: 表示zl指向的ziplist的总大小（包括zlbytes, zltail, zllen, zlend和各个数据项）。需要注意的是：如果ziplist被压缩了，那么这个sz的值仍然是压缩前的ziplist大小。
+- count: 表示ziplist里面包含的数据项个数。这个字段只有16bit
+- encoding: 表示ziplist是否压缩了，2表示被压缩了，1表示没有压缩。其他字段感兴趣的可以看参考中的第一篇文章
+
+如果压缩了，则zl会指向quicklistLZF结构，quicklistLZF的源码中：
+- sz: 表示压缩后的ziplist大小。
+- compressed: 是个柔性数组，存放压缩后的ziplist字节数组。
+
+quicklistNode结构中，实际存储数据的zl指针，实际上是一个ziplist（稍后介绍），到这里我们能看出quicklist的整体结构，双向链表+ziplist
+
+![输入图片说明](https://images.gitee.com/uploads/images/2021/0414/155240_c855618b_8076629.png "屏幕截图.png")
+
+为什么要这么设计呢？为什么不直接使用双向链表或者使用ziplist来存储，而是要包装一层呢？
+
+在回答这个问题之前，我们先看一下ziplist，官方源码中ziplist 不像其他数据结构有具体的类型，在官方的注解中有这样一段描述：
+
+```
+// https://github.com/redis/redis/blob/6.2/src/ziplist.c
+ziplist 结构描述
+The general layout of the ziplist is as follows:
+<zlbytes> <zltail> <zllen> <entry> <entry> ... <entry> <zlend>
+
+entry 描述：
+So a complete entry is stored like this:
+<prevlen> <encoding> <entry-data>
+
+```
+- zlbytes：32bit 表示ziplist占用的字节总数，其中包含自己本身占用的4个字节
+- zltail：32bit 表示ziplist 最后一个entry 距离列表起始地址有多少个字节。它的存在意味可以很方便地找到最后一项，而不需要遍历整个列表，并且可以快速的进行pop和push操作
+- zllen：16bit 表示entry的个数
+- entry :表示真正存放数据的数据项
+- zlend ：8bit ，ziplist最后一项，表示结尾，固定值255
+
+下面是entry 说明：
+- prevlen 表示前一个数据项占用的总字节数，可以方便从后向前遍历。
+- encoding 表示当前数据项所保存数据的类型以及长度
+- entry-data 实际的数据
+
+ziplist 使用的是一块连续的内存，它要比普通的链表结构更加节省内存（就以java中的LinkedList来说，链表中每一项都占用独立的一块内存，各项之间用地址指针或引用连接起来，这种方式会带来大量的内存碎片，而且地址指针或引用也会占用额外的内存），同时也减少了内存碎片。但是因为ziplist的复杂结构，也让它变的不利于修改。
+
+回到上面的问题，为什么quicklist 要设计成双向链表+ziplist？
+
+这也是空间和时间的折中：
+- 双向链表便于在两端进行插入和删除，但是需要额外的空间存储，
+
+
+
+
+
+参考:
+
+[Redis内部数据结构详解(5)——quicklist](http://zhangtielei.com/posts/blog-redis-quicklist.html)
+
+[Redis 存储效率的追求-ziplist](https://www.jianshu.com/p/08da62e21fa5)
 
 
 ### hash

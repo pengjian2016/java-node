@@ -46,7 +46,7 @@
      - [zookeeper 数据结构、Paxos算法，Zab协议，分布式锁，集群](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/mq/zk.md)
 
    - #### redis
-     - redis 数据类型及使用场景，布隆过滤器
+     - [redis 数据类型及使用场景，如何批量删除key，布隆过滤器等](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/redis/redis.md)
      - 单线程速度快的原因、持久化机制（RDB、AOF），数据库缓存一致性问题
      - 内存淘汰机制（LRU，LFU）
      - 缓存穿透、缓存雪崩、缓存击穿

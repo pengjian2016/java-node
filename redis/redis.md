@@ -137,7 +137,7 @@ void pushGenericCommand(client *c, int where, int xx) {
             addReply(c, shared.czero);
             return;
         }
-
+        // 创建quicklist对象
         lobj = createQuicklistObject();
         quicklistSetOptions(lobj->ptr, server.list_max_ziplist_size,
                             server.list_compress_depth);
@@ -229,16 +229,47 @@ So a complete entry is stored like this:
 - encoding 表示当前数据项所保存数据的类型以及长度
 - entry-data 实际的数据
 
-ziplist 使用的是一块连续的内存，它要比普通的链表结构更加节省内存（就以java中的LinkedList来说，链表中每一项都占用独立的一块内存，各项之间用地址指针或引用连接起来，这种方式会带来大量的内存碎片，而且地址指针或引用也会占用额外的内存），同时也减少了内存碎片。但是因为ziplist的复杂结构，也让它变的不利于修改。
+ziplist 使用的是一块连续的内存，它要比普通的链表结构更加节省内存（就以java中的LinkedList来说，链表中每一项都占用独立的一块内存，各项之间用引用连接起来，这种方式会带来大量的内存碎片，而且引用也会占用额外的内存），同时也减少了内存碎片。但是因为ziplist的复杂结构，也让它变的不利于修改。
 
 回到上面的问题，为什么quicklist 要设计成双向链表+ziplist？
 
 这也是空间和时间的折中：
-- 双向链表便于在两端进行插入和删除，但是需要额外的空间存储，
+- 双向链表便于在两端进行插入和删除，但是需要额外的空间存储前驱和后续节点的指针或引用，链表中的每个节点都是独立的，空间不连续，节点多了容易产生内存碎片。
+- ziplist由于是一整块连续内存，所以存储效率很高，但是不利于修改，每次数据变动都会引发一次内存的realloc，特别是数据很长的时候，使得它变得效率低下。
+
+结合二者的优点，设计出了quicklist 
+
+那么一个新的元素是加入到当前节点的ziplist中，还是新建节点放入，如何规定ziplist的长度呢？
+
+Redis提供了一个配置参数list-max-ziplist-size：
+
+- 当取正值的时候，表示按照数据项个数来限定每个quicklist节点上的ziplist长度。比如：当这个参数配置成5的时候，表示每个quicklist节点的ziplist最多包含5个数据项
+- 当取负值的时候，表示按照占用字节数来限定每个quicklist节点上的ziplist长度，这个时候只能取5个值：
+- -5: 每个quicklist节点上的ziplist大小不能超过64 Kb
+- -4: 每个quicklist节点上的ziplist大小不能超过32 Kb
+- -3: 每个quicklist节点上的ziplist大小不能超过16 Kb
+- -2: 每个quicklist节点上的ziplist大小不能超过8 Kb（默认值，在官方的配置文件redis.conf中，推荐-2和-1）
+- -1: 每个quicklist节点上的ziplist大小不能超过4 Kb 
 
 
+#### 使用场景
 
+评论列表如何实现？
 
+上面list的底层实现原理我们已有了解，知道它可能不太适合大记录的存储，一条评论信息包含评论id，评论人信息，评论内容等，我们一般不会把整条评论序列化之后存储到list中，
+而是以文章id为key，评论id为value放入到list中，评论的详细信息通过数据库或者redis的hash结构再次查询获得。关注列表、点赞列表等也是类似的逻辑。
+
+list如何实现消息队列？
+
+list 提供的 lpush/rpush和lpop/rpop 所以我们可以在头部插入，尾部弹出消息。
+
+但是如果只用lpush rpop这样的命令处理消息，会存在一个性能风险点，比如消费者如果想要及时的处理数据，就要在程序中写个类似 while(true) 这样的循环，不停的去调用 RPOP 或 LPOP 命令，这就会给消费者程序带来些不必要的性能损失
+
+好在redis 提供了BLPOP、BRPOP 这种阻塞式读取的命令，客户端在没有读到队列数据时，自动阻塞，直到有新的数据写入队列，再开始读取新数据。这种方式就节省了不必要的 CPU 开销。
+
+所以list实现消息队列主要通过，lpush/rpush blpop/brpop 这些命令。
+
+当然redis中还有 Publish/Subscribe 消息的发布和订阅模式，提供消息队列的能力，这里暂时不详细展开。
 
 参考:
 

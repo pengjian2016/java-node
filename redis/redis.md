@@ -12,13 +12,21 @@ redis 在线测试工具https://try.redis.io/ 如果你对redis的命令等不�
 |  zset  | 有序集合，又称SortedSet，一方面它是一个 set，保证了内部 value 的唯一性，另一方面它可以为每个 value 赋予一个 score 值，用来代表排序的权重，其内部是一个跳跃表的数据结构，常用命令：zadd key score value 添加元素，zrange key start end 获取范围内的元素  | 常用来做排行榜，电话号码簿  |
 
 
-### string
+### redisObject
 
-redis中 string 实际的结构为 redisObject+sdshdr
+redis 中所有元素均由 redisObject + 其他编码方式组成，比如string格式，则实际存储的格式为：redisObject + sdshdr
 
-redisObject 由：type、encoding、ptr组成
+redisObject 由 type、encoding、ptr 三个属性组成：
+- type 记录对象的类型，REDIS_STRING、REDIS_LIST、REDIS_HASH、REDIS_SET、REDIS_ZSET
+- encoding 对象编码：REDIS_ENCODING_EMBSTR、REDIS_ENCODING_HT、REDIS_ENCODING_ZIPLIST等
+- ptr 实际存储的数据：比如，如果是string 则可能指向sdshdr结构的数据，如果是hash可能指向dict格式的数据等
 
 RedisObject对象很重要，Redis 对象的类型 、 内部编码 、 内存回收 、 共享对象 等功能，都是基于RedisObject对象来实现的。
+
+
+### string
+
+redis中 string 实现结构为 sdshdr
 
 sdshdr 的结构，官方文档（https://redis.io/topics/internals-sds）：
 
@@ -280,8 +288,219 @@ list 提供的 lpush/rpush和lpop/rpop 所以我们可以在头部插入，尾�
 
 ### hash
 
-底层实现，rehash过程
+同样看一下hash的入口方法: hset key field value 命令入口：
+```
+// https://github.com/redis/redis/blob/6.2/src/t_hash.c
 
+void hsetCommand(client *c) {
+    int i, created = 0;
+    robj *o;
+
+    if ((c->argc % 2) == 1) {
+        addReplyErrorFormat(c,"wrong number of arguments for '%s' command",c->cmd->name);
+        return;
+    }
+
+    if ((o = hashTypeLookupWriteOrCreate(c,c->argv[1])) == NULL) return;
+    // 判断是否需要将ziplist转换为hashtable 
+    hashTypeTryConversion(o,c->argv,2,c->argc-1);
+
+    // 添加或更新元素
+    for (i = 2; i < c->argc; i += 2)
+        created += !hashTypeSet(o,c->argv[i]->ptr,c->argv[i+1]->ptr,HASH_SET_COPY);
+
+    /* HMSET (deprecated) and HSET return value is different. */
+    char *cmdname = c->argv[0]->ptr;
+    if (cmdname[1] == 's' || cmdname[1] == 'S') {
+        /* HSET */
+        addReplyLongLong(c, created);
+    } else {
+        /* HMSET */
+        addReply(c, shared.ok);
+    }
+    signalModifiedKey(c,c->db,c->argv[1]);
+    notifyKeyspaceEvent(NOTIFY_HASH,"hset",c->argv[1],c->db->id);
+    server.dirty += (c->argc - 2)/2;
+}
+// 将ziplist转换为hashtable 
+void hashTypeTryConversion(robj *o, robj **argv, int start, int end) {
+    int i;
+
+    if (o->encoding != OBJ_ENCODING_ZIPLIST) return;
+
+    for (i = start; i <= end; i++) {
+        if (sdsEncodedObject(argv[i]) &&
+            sdslen(argv[i]->ptr) > server.hash_max_ziplist_value)
+        {
+            hashTypeConvert(o, OBJ_ENCODING_HT);
+            break;
+        }
+    }
+}
+// 添加或更新元素
+int hashTypeSet(robj *o, sds field, sds value, int flags) {
+    int update = 0;
+
+    if (o->encoding == OBJ_ENCODING_ZIPLIST) {
+        unsigned char *zl, *fptr, *vptr;
+
+        zl = o->ptr;
+        fptr = ziplistIndex(zl, ZIPLIST_HEAD);
+        if (fptr != NULL) {
+            fptr = ziplistFind(zl, fptr, (unsigned char*)field, sdslen(field), 1);
+            if (fptr != NULL) {
+                /* Grab pointer to the value (fptr points to the field) */
+                vptr = ziplistNext(zl, fptr);
+                serverAssert(vptr != NULL);
+                update = 1;
+
+                /* Replace value */
+                zl = ziplistReplace(zl, vptr, (unsigned char*)value,
+                        sdslen(value));
+            }
+        }
+
+        if (!update) {
+            /* Push new field/value pair onto the tail of the ziplist */
+            zl = ziplistPush(zl, (unsigned char*)field, sdslen(field),
+                    ZIPLIST_TAIL);
+            zl = ziplistPush(zl, (unsigned char*)value, sdslen(value),
+                    ZIPLIST_TAIL);
+        }
+        o->ptr = zl;
+
+        /* Check if the ziplist needs to be converted to a hash table */
+        if (hashTypeLength(o) > server.hash_max_ziplist_entries)
+            hashTypeConvert(o, OBJ_ENCODING_HT);
+    } else if (o->encoding == OBJ_ENCODING_HT) {
+        dictEntry *de = dictFind(o->ptr,field);
+        if (de) {
+            sdsfree(dictGetVal(de));
+            if (flags & HASH_SET_TAKE_VALUE) {
+                dictGetVal(de) = value;
+                value = NULL;
+            } else {
+                dictGetVal(de) = sdsdup(value);
+            }
+            update = 1;
+        } else {
+            sds f,v;
+            if (flags & HASH_SET_TAKE_FIELD) {
+                f = field;
+                field = NULL;
+            } else {
+                f = sdsdup(field);
+            }
+            if (flags & HASH_SET_TAKE_VALUE) {
+                v = value;
+                value = NULL;
+            } else {
+                v = sdsdup(value);
+            }
+            dictAdd(o->ptr,f,v);
+        }
+    } else {
+        serverPanic("Unknown hash encoding");
+    }
+
+    /* Free SDS strings we did not referenced elsewhere if the flags
+     * want this function to be responsible. */
+    if (flags & HASH_SET_TAKE_FIELD && field) sdsfree(field);
+    if (flags & HASH_SET_TAKE_VALUE && value) sdsfree(value);
+    return update;
+}
+
+```
+代码比较长，重点部分已经做了注释，我们只需要知道的是 hash结构由ziplist和hashtable两种方式实现，满足下面两个条件则使用ziplist结构：
+- 对象保存的所有键值对的键和值的字符串长度都小于 64 字节
+- 对象保存的键值对数量小于 512 个（可以通过配置文件调整）
+
+ziplist 结构上面已有介绍，这里不再说明，如果是ziplist结构看一下如何存储hash内容的呢？（以下内容来自参考列表第一篇文章，强烈推荐）：
+
+```
+redis> HSET profile name "Tom"
+(integer) 1
+redis> HSET profile age 25
+(integer) 1
+redis> HSET profile career "Programmer"
+(integer) 1
+
+```
+以上命令创建的profile这个key对应的值对象在redis中实际存储结构：
+
+![输入图片说明](https://images.gitee.com/uploads/images/2021/0416/102054_e19c888a_8076629.png "屏幕截图.png")
+
+该对象的k/v 在ziplist中的内容：
+
+![输入图片说明](https://images.gitee.com/uploads/images/2021/0416/102200_c3f693c2_8076629.png "屏幕截图.png")
+
+以上是hash的ziplist实现方式，下面看一下hashtable的实现，首先看一下字典的结构定义：
+
+```
+// https://github.com/redis/redis/blob/6.2/src/dict.h
+typedef struct dictEntry {
+    // 字典的key
+    void *key;
+    union {
+        // 字典的value
+        void *val;
+        uint64_t u64;
+        int64_t s64;
+        double d;
+    } v;
+    // 下一个节点，key的hash冲突时，形成了链表结构
+    struct dictEntry *next;
+} dictEntry;
+
+typedef struct dictht {
+    // 哈希数组table
+    dictEntry **table;
+    unsigned long size;
+    unsigned long sizemask;
+    unsigned long used;
+} dictht;
+
+typedef struct dict {
+    dictType *type;
+    void *privdata;
+    // 两个 dictht结构
+    dictht ht[2];
+    long rehashidx; /* rehashing not in progress if rehashidx == -1 */
+    int16_t pauserehash; /* If >0 rehashing is paused (<0 indicates coding error) */
+} dict;
+```
+可以看到redis中的hashtable 与java中的1.7 之前的HashMap很相似，内部都是采用数组+链表的结构存储数据。哈希冲突时，采用链地址法（拉链法）解决冲突。
+
+#### 扩容、缩容和rehash
+
+当哈希表中的元素过多或过少时，会进行扩容和缩容，使得哈希表大小维护在一个合理的范围内：
+
+- 正常情况下，当哈希表中的元素个数大于等于数组大小（哈希表由数组+链表组成，当总元素大于等于数组长度时就会扩容，也称为负载因子大于等于1）时就会进行扩容，新的容量为第一个大于等于总元素大小的2^n （2 的 n 次方幂），比如当前总元素为11个，那么新的容量必须要大于11 并且时2的n 次方幂，那就是16
+- 如果redis正常执行bgsave(持久化命令)操作，为了减少内存页过多分离，redis会尽力避免扩容操作，但是因为不能扩容，而哈希表中的元素又过多，超过了数组长度的5被（即负载因子大于等于5），这个时候也会进行强制扩容。容量与上面计算方式一样
+- 当哈希表中的元素个数低于数组大小的10%（负载因子为0.1）时，会进行相应的缩容操作，数组长度缩减为第一个大于等于总元素大小的2^n
+
+rehash过程：扩容或缩容都需要rehash过程，哈希表中用到了两个dictht ht[0] 和 ht[1]，在未进行rehash过程时，只会使用到其中的一个哈希表，为了避免 rehash 对服务器性能造成影响，redis采用的时渐进式rehash，分多次、渐进式地将 ht[0] 里面的键值对慢慢地 rehash 到 ht[1]中，rehash的详细步骤：
+- 为 ht[1] 分配空间， 让字典同时持有 ht[0] 和 ht[1] 两个哈希表
+- 在字典中维持一个索引计数器变量 rehashidx ， 并将它的值设置为 0 ， 表示 rehash 工作正式开始
+- 在 rehash 进行期间， 每次对字典执行添加、删除、查找或者更新操作时， 程序除了执行指定的操作以外， 还会顺带将 ht[0] 哈希表在 rehashidx 索引上的所有键值对 rehash 到 ht[1] ， 当 rehash 工作完成之后， 程序将 rehashidx 属性的值增一
+- 随着字典操作的不断执行， 最终在某个时间点上， ht[0] 的所有键值对都会被 rehash 至 ht[1] ， 这时程序将 rehashidx 属性的值设为 -1 ， 表示 rehash 操作已完成
+
+渐进式 rehash 的好处在于它采取分而治之的方式， 将 rehash 键值对所需的计算工作均滩到对字典的每个添加、删除、查找和更新操作上， 从而避免了集中式 rehash 而带来的庞大计算量。
+
+rehash 期间的操作会同时使用 ht[0] 和 ht[1] 两个哈希表，字典的删除（delete）、查找（find）、更新（update）等操作会在两个哈希表上进行， 新添加到字典的键值对一律会被保存到 ht[1] 里面。
+
+最终rehash完成后，会释放 ht[0] ， 将 ht[1] 设置为 ht[0] ， 并在 ht[1] 新创建一个空白哈希表， 为下一次 rehash 做准备
+
+
+参考：
+
+[哈希对象](http://redisbook.com/preview/object/hash.html)
+
+[rehash](http://redisbook.com/preview/dict/rehashing.html)
+
+[渐进式 rehash](http://redisbook.com/preview/dict/incremental_rehashing.html)
+
+[Redis(1)——5种基本数据结构](https://www.wmyskxz.com/2020/02/28/redis-1-5-chong-ji-ben-shu-ju-jie-gou/)
 ### set
 
 ### zset

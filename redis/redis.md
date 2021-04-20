@@ -604,7 +604,23 @@ zskiplistNode：
 
 ### 如何批量删除key？
 
+如果我们知道key的名称，可以通过 del key1 key2 key3 删除多个key，不存在的话会忽略
+
+如果我们只知道key的前缀或者某个特殊符号等，可以使用 scan + xargs 命令删除：
+
+```
+./redis-cli -h 127.0.0.1 -p 6379 --scan --pattern 'java*' | xargs ./redis-cli -h 127.0.0.1 -p 6379 del
+
+//异步删除 把del 换成unlink
+
+./redis-cli -h 127.0.0.1 -p 6379 --scan --pattern 'java*' | xargs ./redis-cli -h 127.0.0.1 -p 6379 unlink
+
+```
+
 ### redis中的 布隆过滤器
+
+
+
 
 ### redis中的 geo
 

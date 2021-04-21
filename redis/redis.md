@@ -611,11 +611,20 @@ zskiplistNode：
 
 ![输入图片说明](https://images.gitee.com/uploads/images/2021/0416/155138_f5c5f0d9_8076629.png "屏幕截图.png")
 
+最后看一下整体存储结构：
+
+redis服务器默认会创建16个数据库，所有的键值对都保存在dict字典中。
+
+![输入图片说明](https://images.gitee.com/uploads/images/2021/0421/105513_88af5b83_8076629.png "屏幕截图.png")
+
+
 参考：
 
 [有序集合对象](http://redisbook.com/preview/object/sorted_set.html)
 
 [跳跃表的实现](http://redisbook.com/preview/skiplist/datastruct.html)
+
+[Redis整体数据存储说明](https://itzones.cn/2020/04/30/Redis%E6%95%B4%E4%BD%93%E6%95%B0%E6%8D%AE%E5%AD%98%E5%82%A8%E8%AF%B4%E6%98%8E/)
 
 ### 如何批量删除key？
 

@@ -606,7 +606,7 @@ zskiplistNode：
 
 如果我们知道key的名称，可以通过 del key1 key2 key3 删除多个key，不存在的话会忽略
 
-如果我们只知道key的前缀或者某个特殊符号等，可以使用 scan + xargs 命令删除：
+如果我们只知道key的前缀或者某个特殊符号等，可以使用 scan + xargs 命令删除（当然另外也有 keys+xargs 命令可以删除但是实际生产环境中并不推荐，这里也就不介绍了）：
 
 ```
 ./redis-cli -h 127.0.0.1 -p 6379 --scan --pattern 'java*' | xargs ./redis-cli -h 127.0.0.1 -p 6379 del
@@ -629,7 +629,19 @@ zskiplistNode：
 
 ![输入图片说明](https://images.gitee.com/uploads/images/2021/0420/144011_ebff59fe_8076629.png "屏幕截图.png")
 
+布隆过滤器是用于判断一个元素是否在集合中。通过一个位数组和N个hash函数实现
+
+优点：
+
+空间效率高，所占空间小。查询时间短。
+
+缺点：
+
+元素添加到集合中后，不能被删除。有一定的误判率
+
+
 布隆过滤器最大的特点是，如果它判断某个值不存在，那么一定不存在，如果它判断存在，有可能误判，比如布隆过滤器中对应的位置被其他元素先占用了等。
+
 
 基于此，我们可以用来判断某些key是不是存在，防止缓存穿透的情况。
 
@@ -637,11 +649,68 @@ redis 中我们经常会做一些热点数据为缓存，当请求过来之后�
 
 针对这种情况，我们可以先把系统中的数据先在布隆过滤器中放置一遍，当请求过来的时候，先在布隆过滤器中判断是否存在，不存在的直接返回，存在之后再判断缓存和数据库，这样就可以过滤调大部分的非正常请求，从而防止缓存穿透的情况。
 
+redis 中的布隆过滤器实现：
+
+```
+// 方案一 还有更多的细节需要实现，比如hash函数的实现，计算对应的offset等
+SETBIT key offset value:对key设置指定offset上的值
+GETBIT key offset:获取key指定offset上对应的值
+
+// 方案二 使用RedisBloom https://github.com/RedisBloom/RedisBloom 更多细节到这里查看
+BF.ADD newFilter foo
+BF.EXISTS newFilter foo
+
+// 方案三 使用Redisson（https://github.com/redisson/redisson） 这是java版的一个封装好的redis类库，里面不仅有布隆过滤器的实现，还有redis的分布式锁等，该库会在另一个章节中介绍
+RBloomFilter<String> bloomFilter = redisson.getBloomFilter("phoneList");
+//初始化布隆过滤器：预计元素为100000000L,误差率为3%
+bloomFilter.tryInit(100000000L,0.03);
+//将号码10086插入到布隆过滤器中
+bloomFilter.add("10086");
+//判断下面号码是否在布隆过滤器中
+System.out.println(bloomFilter.contains("123456"));//false
+System.out.println(bloomFilter.contains("10086"));//true
+
+```
 
 参考：
 
 [Redis(5)——亿级数据过滤和布隆过滤器](https://www.wmyskxz.com/2020/03/11/redis-5-yi-ji-shu-ju-guo-lu-he-bu-long-guo-lu-qi/)
 
+[Redis详解（十三）------ Redis布隆过滤器](https://www.cnblogs.com/ysocean/p/12594982.html)
+
 ### redis中的 geo
 
+Redis基于[geohash](https://redis.io/commands/geohash)和有序集合(zset)提供了地理位置相关功能，可以用来实现查找附近的人，附近的共享单车，附近的XXX等
+
+geohash的思想是将二维的经纬度转换成一维的字符串，geohash有以下三个特点:
+- 字符串越长，表示的范围越精确
+- 字符串相似的表示距离相近，利用字符串的前缀匹配，可以查询附近的地理位置。这样就实现了快速查询某个坐标附近的地理位置。
+- geohash计算的字符串，可以反向解码出原来的经纬度
+
+更多细节请参考这篇文章[GeoHash原理及redis geo相关操作](https://segmentfault.com/a/1190000038529554)
+
 ### redis中的HyperLogLog
+
+HyperLogLog 是一种基数估算算法，所谓基数估算，就是估算在一批数据中，不重复元素的个数有多少，HyperLogLog 的优点是，在输入元素的数量或者体积非常大时，计算基数所需的空间总是固定的、并且是很小的。常用于统计日活、月活等数据
+
+redis 中 的实现：
+
+```
+# 用于向 HyperLogLog 添加元素
+# 如果 HyperLogLog 估计的近似基数在 PFADD 命令执行之后出现了变化， 那么命令返回 1 ， 否则返回 0 
+# 如果命令执行时给定的键不存在， 那么程序将先创建一个空的 HyperLogLog 结构， 然后再执行命令
+pfadd key value1 [value2 value3]
+
+# PFCOUNT 命令会给出 HyperLogLog 包含的近似基数
+# 在计算出基数后， PFCOUNT 会将值存储在 HyperLogLog 中进行缓存，知道下次 PFADD 执行成功前，就都不需要再次进行基数的计算。
+pfcount key
+
+# PFMERGE 将多个 HyperLogLog 合并为一个 HyperLogLog ， 合并后的 HyperLogLog 的基数接近于所有输入 HyperLogLog 的并集基数。
+pfmerge destkey key1 key2 [...keyn]
+
+```
+
+参考：
+
+[Redis 中 HyperLogLog 的使用场景](https://www.cnblogs.com/54chensongxia/p/13803465.html)
+

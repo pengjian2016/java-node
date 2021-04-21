@@ -16,13 +16,28 @@ redis 在线测试工具https://try.redis.io/ 如果你对redis的命令等不�
 
 redis 中所有元素均由 redisObject + 其他编码方式组成，比如string格式，则实际存储的格式为：redisObject + sdshdr
 
-redisObject 由 type、encoding、ptr 三个属性组成：
+```
+// https://github.com/redis/redis/blob/6.2/src/server.h
+typedef struct redisObject {
+    unsigned type:4;
+    unsigned encoding:4;
+    unsigned lru:LRU_BITS; /* LRU time (relative to global lru_clock) or
+                            * LFU data (least significant 8 bits frequency
+                            * and most significant 16 bits access time). */
+    int refcount;
+    void *ptr;
+} robj;
+
+```
+
+redisObject 介绍：
 - type 记录对象的类型，REDIS_STRING、REDIS_LIST、REDIS_HASH、REDIS_SET、REDIS_ZSET
 - encoding 对象编码：REDIS_ENCODING_EMBSTR、REDIS_ENCODING_HT、REDIS_ENCODING_ZIPLIST等
 - ptr 实际存储的数据：比如，如果是string 则可能指向sdshdr结构的数据，如果是hash可能指向dict格式的数据等
+- refcount 对象的引用计数信息，主要用于内存回收， 程序可以通过跟踪对象的引用计数信息， 在适当的时候自动释放对象并进行内存回收
+- lru 访问时间信息，用于对象的回收
 
 RedisObject对象很重要，Redis 对象的类型 、 内部编码 、 内存回收 、 共享对象 等功能，都是基于RedisObject对象来实现的。
-
 
 ### string
 

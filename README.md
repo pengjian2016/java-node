@@ -38,7 +38,11 @@
    - #### spring
       - [spring IOC，AOP，spring bean 生命周期和作用范围，springboot 启动过程、自动装配过程，如何实现自定义注解、自定义注解方法返回支持哪些类型，注解如何生效的，BeanFactory，ApplicationContext，FactoryBean区别 ](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/spring/springboot.md)
       - [springboot 内置容器Tomcat、Jetty、undertow、Reactor Netty](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/spring/properties.md)
-   - #### mybatis
+   - #### jpa/hibernate/mybatis
+     - jpa 实现原理？如何将方法翻译为sql语句的？
+     - jpa save 方法如何识别是insert还是 update？
+     - hibernate
+     - mybatis
    - #### 消息队列kafka，rocketMQ，rabbitmq
      - [消息顺序性如何保证、重复消息问题、消息丢失问题、消息堆积问题](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/mq/mq.md)
      - [kafka，rocketMQ，rabbitmq 集群](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/mq/info.md)

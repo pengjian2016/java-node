@@ -16,9 +16,32 @@ redis 4.0 之前是单线程的，4.0 之后引入了多线程处理异步任务
 
 # 什么是I/O多路复用？
 
+> 所谓 I/O 多路复用指的就是 select/poll/epoll 这一系列的多路选择器：支持单一线程同时监听多个文件描述符（I/O 事件），阻塞等待，并在其中某个文件描述符可读写时收到通知。 I/O 复用其实复用的不是 I/O 连接，而是复用线程，让一个 thread of control 能够处理多个连接（I/O 事件）[摘自Go netpoller 原生网络模型之源码全面揭秘](https://strikefreedom.top/go-netpoll-io-multiplexing-reactor)
+
+> select，poll以及大名鼎鼎的epoll就是IO多路复用模型，其特点就在于单个系统调用可以同时处理多个网络连接的IO，它的基本原理就是select/poll/epoll这个function会不断的轮询所负责的所有socket，当某个socket有数据到达了，就通知用户进程。当用户进程调用了select/poll/epoll，整个进程会被阻塞，而同时，kernel会“监视”所有select/poll/epoll负责的socket，当任何一个socket中的数据准备好了，select/poll/epoll就会返回。这个时候用户进程再调用recvfrom操作，将数据从内核缓冲区拷贝到用户进程缓冲区。[摘自Unix网络编程的5种I/O模型](https://zhuanlan.zhihu.com/p/121826927)
+
+虽然定义略有差异，但是内容都差不多。
+
+总结IO多路复用：一个线程利用select/poll/epoll 这些函数，能够监听多个连接（socket），当这些连接真正有读写等事件时，才会进行处理，否则就阻塞在那里。
+
+回到前面的问题，redis 6.0 之前，它的核心网络模型一直是一个典型的 单Reactor 模型（可以理解为设计模式，而IO多路复用为该模式的一种实现），利用多路复用技术，在单线程的事件循环中不断去处理客户端请求，最后回写响应数据到客户端。
+
+![输入图片说明](https://images.gitee.com/uploads/images/2021/0423/102239_89e00de5_8076629.png "屏幕截图.png")
+
+6.0 之后引入多线程之后会进化为 Multi-Reactors 模式，这种模式不再是单线程的事件循环，而是有多个线程（Sub Reactors）各自维护一个独立的事件循环，由 Main Reactor 负责接收新连接并分发给 Sub Reactors 去独立处理，最后 Sub Reactors 回写响应给客户端。
+
+![输入图片说明](https://images.gitee.com/uploads/images/2021/0423/102249_a1e0b598_8076629.png "屏幕截图.png")
+
+那么为什么从单线程变成了多线程呢？
+
+redis官方认为，因为Redis是基于内存的操作，CPU不是Redis的瓶颈，Redis的瓶颈最有可能是机器 **内存** 或者 **网络** 带宽，使用单线程后，可维护性高。多线程模型虽然在某些方面表现优异，但是它却引入了程序执行顺序的不确定性，带来了并发读写的一系列问题，增加了系统复杂度、同时可能存在线程切换、甚至加锁解锁、死锁造成的性能损耗。
+
+单线程瓶颈，并发量非常大时，单线程读写客户端IO数据存在性能瓶颈，读写客户端数据依旧是同步IO，只能单线程依次读取客户端的数据，无法利用到CPU多核。为了提升QPS，很多公司的做法是部署Redis集群，并且尽可能提升Redis机器数，但是这种做法的资源消耗是巨大的。互联网业务越来越复杂，有些公司动不动就上亿的交易量，因此需要更大的QPS。为了提升网络IO的性能，redis因而引入了多线程。需要注意的是，Redis 6.0 只有在网络请求的接收和解析，以及请求后的数据通过网络返回给时，使用了多线程，命令的执行还是单线程的。
 
 
 # 什么是事件派发器？
+
+
 
 # RDB和AOF 持久化
 
@@ -28,3 +51,7 @@ redis 4.0 之前是单线程的，4.0 之后引入了多线程处理异步任务
 参考
 
 [Redis 多线程网络模型全面揭秘](https://strikefreedom.top/multiple-threaded-network-model-in-redis)
+
+[Go netpoller 原生网络模型之源码全面揭秘](https://strikefreedom.top/go-netpoll-io-multiplexing-reactor)
+
+[Unix网络编程的5种I/O模型](https://zhuanlan.zhihu.com/p/121826927)

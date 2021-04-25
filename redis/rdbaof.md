@@ -51,11 +51,98 @@ I/O多路复用程序负责监听多个套接字，并向文件事件派发器�
 
 # RDB和AOF 持久化
 
+RDB 持久化快照，在一定间隔时间内将内存中的数据据以快照的形式保存到磁盘中。
+
+在redis.conf 配置文件中，RDB 默认是开启的，持久化后的文件名称默认为dump.rdb：
+
+```
+# Save the DB on disk:
+#
+#   save <seconds> <changes>
+#
+#   Will save the DB if both the given number of seconds and the given
+#   number of write operations against the DB occurred.
+#
+#   In the example below the behavior will be to save:
+#   after 900 sec (15 min) if at least 1 key changed
+#   after 300 sec (5 min) if at least 10 keys changed
+#   after 60 sec if at least 10000 keys changed
+#
+#   Note: you can disable saving completely by commenting out all "save" lines.
+#
+#   It is also possible to remove all the previously configured save
+#   points by adding a save directive with a single empty string argument
+#   like in the following example:
+#  
+#   save ""   // 如果要关闭 RDB 则使用这个命令
+
+save 900 1     // 每15分钟，至少发生1次key的变动，会触发持久化 
+save 300 10    // 每5分钟，至少发生10次key的变动，会触发持久化 
+save 60 10000  // 每分钟，至少发生10000次key的变动，会触发持久化  
+
+# 持久化文件名
+dbfilename dump.rdb
+```
+以上是通过配置文件，间隔时间内自动触发的方式，当然我们也可以手动使用命令触发RDB持久化：
+
+- save 命令，该命令是同步操作，会阻塞当前Redis服务器，执行save命令期间，Redis不能处理其他命令，直到RDB过程完成为止。（线上基本不会使用该命令）
+- bgsave 命令，异步操作，Redis fork 出一个新子进程，原来的 Redis 进程（父进程）继续处理客户端请求，而子进程则负责将数据保存到磁盘，然后退出。（上面配置文件中，也是使用的bgsave命令）
+
+AOF（Append Only File ）持久化功能，它会把被执行的写命令写到AOF文件的末尾，记录数据的变化。默认情况下，Redis是没有开启AOF持久化的，开启后，每执行一条更改Redis数据的命令，都会把该命令追加到AOF文件中，这是会降低Redis的性能，但大部分情况下这个影响是能够接受的，另外使用较快的硬盘可以提高AOF的性能。
+
+如何开启AOF，在redis.conf 配置文件中：
+
+```
+
+# 开启AOF 持久化
+appendonly yes
+
+# aof持久化文件名称
+appendfilename "appendonly.aof"
+
+# 同步策略，always-每次有写命令，都会同步写入到磁盘，everysec-每秒执行一次同步，no-由操作系统来决定何时同步
+# appendfsync always
+appendfsync everysec
+# appendfsync no
+
+```
+RDB和AOF 各自的优缺点
+
+
+RDB 优点：
+- 1. RDB快照是一个压缩过的非常紧凑的文件，保存着某个时间点的数据集，适合做数据的备份，灾难恢复
+- 2. RDB是fork子进程进行持久化，对父进程影响不大，这保证了 redis 的高性能
+- 3. 数据恢复时，数据较大的情况下，RDB要比AOF恢复更快
+
+RDB 缺点：
+- rdb是间隔一定时间执行，相比AOF来说，可能会丢失更多的数据
+- 当redis中的数据较多时，fork的子进程也会消耗更多的CPU资源，可能会导致redis服务卡顿的现象
+
+AOF 优点：
+- 比RDB更可靠，默认策略时每秒保存一次，这样最多只会丢失1秒钟内的数据
+- AOF文件是一个只进行追加的日志文件，且写入操作是以Redis协议的格式保存的，内容是可读的，适合误删紧急恢复
+
+AOF 缺点：
+- 在相同的数据量下，AOF文件一般要比RDB文件更大，它是一个类似于日志记录的文件
+- AOF的不同策略会影响持久化的速度，通常配置的每秒1次已经能获得比较高的性能，可能还是会比RDB慢。
+
+
+不过 4.0 之后redis开始支持RDB和AOF的混合持久化，一般线上系统也是两种持久方式都开启，使用RDB快速恢复数据，然后再通过AOF恢复5分钟内丢失的数据等。
+
+数据如何恢复？
+
+- 如果是redis进程挂掉，那么重启redis进程即可，直接基于AOF文件恢复数据
+
+### RDB 如何fork子进程？
+
+### RDB 会将已经过期的数据持久化吗？
+
+### AOF 持久化过程？
 
 
 # 数据库和缓存一致性问题是如何解决？
 
-# redis 一条命令的执行过程？
+# redis 命令执行过程？
 
 
 
@@ -68,3 +155,5 @@ I/O多路复用程序负责监听多个套接字，并向文件事件派发器�
 [Unix网络编程的5种I/O模型](https://zhuanlan.zhihu.com/p/121826927)
 
 [文件事件](http://redisbook.com/preview/event/file_event.html)
+
+[Redis持久化机制：RDB和AOF](https://juejin.cn/post/6844903939339452430)

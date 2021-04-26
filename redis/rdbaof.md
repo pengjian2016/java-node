@@ -93,21 +93,16 @@ AOF（Append Only File ）持久化功能，它会把被执行的写命令(读�
 如何开启AOF，在redis.conf 配置文件中：
 
 ```
-
 # 开启AOF 持久化
 appendonly yes
-
 # aof持久化文件名称
 appendfilename "appendonly.aof"
-
 # 同步策略，always-每次有写命令，都会同步写入到磁盘，everysec-每秒执行一次同步，no-由操作系统来决定何时同步
 # appendfsync always
 appendfsync everysec
 # appendfsync no
-
 ```
 RDB和AOF 各自的优缺点
-
 
 RDB 优点：
 - 1. RDB快照是一个压缩过的非常紧凑的文件，保存着某个时间点的数据集，适合做数据的备份，灾难恢复
@@ -235,13 +230,62 @@ int rdbSaveKeyValuePair(rio *rdb, robj *key, robj *val, long long expiretime) {
     ...
 }
 ```
-### RDB 恢复数据的过程？
+### RDB 数据载入过程？
+RDB 功能最核心的是 rdbSave 和 rdbLoad 两个函数，前者用于持久化，上面已经介绍过，后者用于将 RDB 文件中的数据重新载入到内存中。话不多说，贴部分源码：
 
+```
+//https://github.com/redis/redis/blob/6.2/src/rdb.c
+int rdbLoad(char *filename, rdbSaveInfo *rsi, int rdbflags) {
+    FILE *fp;
+    rio rdb;
+    int retval;
 
+    if ((fp = fopen(filename,"r")) == NULL) return C_ERR;
+    startLoadingFile(fp, filename,rdbflags);
+    rioInitWithFile(&rdb,fp);
+    retval = rdbLoadRio(&rdb,rdbflags,rsi);
+    fclose(fp);
+    stopLoading(retval==C_OK);
+    return retval;
+}
+int rdbLoadRio(rio *rdb, int rdbflags, rdbSaveInfo *rsi) {
+    ...
+    while(1) {
+        sds key;
+        robj *val;
+        ...
+
+        /* Check if the key already expired. This function is used when loading
+         * an RDB file from disk, either at startup, or when an RDB was
+         * received from the master. In the latter case, the master is
+         * responsible for key expiry. If we would expire keys here, the
+         * snapshot taken by the master may not be reflected on the slave.
+         * Similarly if the RDB is the preamble of an AOF file, we want to
+         * load all the keys as they are, since the log of operations later
+         * assume to work in an exact keyspace state. */
+        if (iAmMaster() &&
+            !(rdbflags&RDBFLAGS_AOF_PREAMBLE) &&
+            expiretime != -1 && expiretime < now)
+        {
+            sdsfree(key);
+            decrRefCount(val);
+        } else {
+            robj keyobj;
+            initStaticStringObject(keyobj,key);
+
+            /* Add the new object in the hash table */
+            int added = dbAddRDBLoad(db,key,val);
+            ...
+}
+```
+由于代码过长，没办法全部贴出来，rdbLoad 主要过程就是打开RDB文件，读取内容加载到redis数据库中，其中会对过期时间判断，如果已经过期了，会释放key。
 
 ### AOF 持久化过程？
 
-### AOF 过期key如何处理？
+
+
+### AOF 中过期的key如何处理？
+
 
 ### 数据恢复过程？
 

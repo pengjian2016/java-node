@@ -300,6 +300,9 @@ AOF 是已文件追加的方式记录写操作，那么当redis中的key过期�
 
 # redis 命令执行过程？
 
+- 客户端向服务器发送命令请求 SET KEY VALUE
+- 服务器接收并处理客户端发来的命令请求 SET KEY VALUE ， 在数据库中进行设置操作， 并产生命令回复 OK
+- 服务器将命令回复 OK 发送给客户端
 
 参考
 
@@ -314,3 +317,5 @@ AOF 是已文件追加的方式记录写操作，那么当redis中的key过期�
 [Redis持久化机制：RDB和AOF](https://juejin.cn/post/6844903939339452430)
 
 [Redis专题：持久化方式之RDB](https://segmentfault.com/a/1190000039208707)
+
+[命令请求的执行过程](http://redisbook.com/preview/server/execute_command.html)

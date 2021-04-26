@@ -88,7 +88,7 @@ dbfilename dump.rdb
 - save 命令，该命令是同步操作，会阻塞当前Redis服务器，执行save命令期间，Redis不能处理其他命令，直到RDB过程完成为止。（线上基本不会使用该命令）
 - bgsave 命令，异步操作，Redis fork 出一个新子进程，原来的 Redis 进程（父进程）继续处理客户端请求，而子进程则负责将数据保存到磁盘，然后退出。（上面配置文件中，也是使用的bgsave命令）
 
-AOF（Append Only File ）持久化功能，它会把被执行的写命令写到AOF文件的末尾，记录数据的变化。默认情况下，Redis是没有开启AOF持久化的，开启后，每执行一条更改Redis数据的命令，都会把该命令追加到AOF文件中，这是会降低Redis的性能，但大部分情况下这个影响是能够接受的，另外使用较快的硬盘可以提高AOF的性能。
+AOF（Append Only File ）持久化功能，它会把被执行的写命令(读命令不会记录)写到AOF文件的末尾，记录数据的变化。默认情况下，Redis是没有开启AOF持久化的，开启后，每执行一条更改Redis数据的命令，都会把该命令追加到AOF文件中，这是会降低Redis的性能，但大部分情况下这个影响是能够接受的，另外使用较快的硬盘可以提高AOF的性能。
 
 如何开启AOF，在redis.conf 配置文件中：
 
@@ -119,26 +119,133 @@ RDB 缺点：
 - 当redis中的数据较多时，fork的子进程也会消耗更多的CPU资源，可能会导致redis服务卡顿的现象
 
 AOF 优点：
-- 比RDB更可靠，默认策略时每秒保存一次，这样最多只会丢失1秒钟内的数据
+- 比RDB更可靠，默认策略是每秒保存一次，这意味着最多只会丢失1秒钟内的数据
 - AOF文件是一个只进行追加的日志文件，且写入操作是以Redis协议的格式保存的，内容是可读的，适合误删紧急恢复
 
 AOF 缺点：
 - 在相同的数据量下，AOF文件一般要比RDB文件更大，它是一个类似于日志记录的文件
-- AOF的不同策略会影响持久化的速度，通常配置的每秒1次已经能获得比较高的性能，可能还是会比RDB慢。
+- AOF的不同策略会影响持久化的速度，通常配置的每秒1次已经能获得比较高的性能，但可能还是会比RDB慢。
+
+4.0 之后redis开始支持RDB和AOF的混合持久化，一般线上系统也是两种持久方式都开启，使用RDB快速恢复数据，然后再通过AOF恢复5分钟内丢失的数据等。
+
+### RDB 实现原理？
+
+redis 定时任务函数serverCron ，该方法执行了rdb的定时任务，由于代码过长没有贴处理，有兴趣的可以看一下源码，其中最主要的是调用了rdbSaveBackground方法，rdbSaveBackground函数中最主要的工作就是调用 fork 命令生成子流程，然后在子流程中执行 rdbSave函数，这个是实际进行RDB持久化的方法，它的主要功能：
+- 先创建一个临时文件用于保存数据
+- 遍历redis数据库，将内存中的数据写入临时文件
+- 临时文件重命名为正式RDB文件，覆盖原文件
+- 更新持久化状态信息（dirty、lastsave）等
+
+![输入图片说明](https://images.gitee.com/uploads/images/2021/0426/105732_d072365b_8076629.png "rdbSave过程.png")
+
+```
+// https://github.com/redis/redis/blob/6.2/src/server.c
+/* This is our timer interrupt, called server.hz times per second.
+ * Here is where we do a number of things that need to be done asynchronously.
+ * For instance:
+ *
+ * - Active expired keys collection (it is also performed in a lazy way on
+ *   lookup).
+ * - Software watchdog.
+ * - Update some statistic.
+ * - Incremental rehashing of the DBs hash tables.
+ * - Triggering BGSAVE / AOF rewrite, and handling of terminated children.
+ * - Clients timeout of different kinds.
+ * - Replication reconnection.
+ * - Many more...
+ *
+ * Everything directly called here will be called server.hz times per second,
+ * so in order to throttle execution of things we want to do less frequently
+ * a macro is used: run_with_period(milliseconds) { .... }
+ */
+int serverCron(struct aeEventLoop *eventLoop, long long id, void *clientData) {
+    ...
+    rdbSaveBackground()
+}
+// 调用fork函数
+int redisFork(int purpose) {
+    ...
+}
+// https://github.com/redis/redis/blob/6.2/src/rdb.c
+int rdbSaveBackground(char *filename, rdbSaveInfo *rsi) {antirez, 4 years ago: • PSYNC2: different improvements to Redis repli…
+    pid_t childpid;
+
+    if (hasActiveChildProcess()) return C_ERR;
+
+    server.dirty_before_bgsave = server.dirty;
+    server.lastbgsave_try = time(NULL);
+
+    if ((childpid = redisFork(CHILD_TYPE_RDB)) == 0) {
+        int retval;
+
+        /* Child */
+        redisSetProcTitle("redis-rdb-bgsave");
+        redisSetCpuAffinity(server.bgsave_cpulist);
+        retval = rdbSave(filename,rsi);
+        if (retval == C_OK) {
+            sendChildCowInfo(CHILD_INFO_TYPE_RDB_COW_SIZE, "RDB");
+        }
+        exitFromChild((retval == C_OK) ? 0 : 1);
+    } else {
+        /* Parent */
+        if (childpid == -1) {
+            server.lastbgsave_status = C_ERR;
+            serverLog(LL_WARNING,"Can't save in background: fork: %s",
+                strerror(errno));
+            return C_ERR;
+        }
+        serverLog(LL_NOTICE,"Background saving started by pid %ld",(long) childpid);
+        server.rdb_save_time_start = time(NULL);
+        server.rdb_child_type = RDB_CHILD_TYPE_DISK;
+        return C_OK;
+    }
+    return C_OK; /* unreached */
+}
+/* Save the DB on disk. Return C_ERR on error, C_OK on success. */
+int rdbSave(char *filename, rdbSaveInfo *rsi) {
+}
+```
+### RDB 会将已经过期的KEY持久化吗？
+
+如果我们不看代码，可能会猜测它不会将已经过期的key持久化，那么到底是不是这样呢？
+
+rdbSave方法会调用rdbSaveRio，这里会遍历数据库中的所有key，获取每个key的过期时间（如果有的话），通过rdbSaveKeyValuePair方法保存，然而在这个方法里面只是保存过期时间，并不会与当前时间比较（有些文章贴出了if (expiretime < now) return 0; 这样的判断，然而那是4.0以前的版本了），所以过期的key 也会被RDB记录下来吗？为什么要记录下来呢？，带着这样的疑问我到社区提出了问题，不过目前还没有人回复，后续跟进。
+
+```
+// https://github.com/redis/redis/blob/6.2/src/rdb.c
+int rdbSaveRio(rio *rdb, int *error, int rdbflags, rdbSaveInfo *rsi) {
+    ...
+     while((de = dictNext(di)) != NULL) {
+            sds keystr = dictGetKey(de);
+            robj key, *o = dictGetVal(de);
+            long long expire;
+
+            initStaticStringObject(key,keystr);
+            expire = getExpire(db,&key);
+            if (rdbSaveKeyValuePair(rdb,&key,o,expire) == -1) goto werr;
+            ...
+}
+int rdbSaveKeyValuePair(rio *rdb, robj *key, robj *val, long long expiretime) {
+    ...
+    /* Save the expire time */
+    if (expiretime != -1) {
+        if (rdbSaveType(rdb,RDB_OPCODE_EXPIRETIME_MS) == -1) return -1;
+        if (rdbSaveMillisecondTime(rdb,expiretime) == -1) return -1;
+    }
+    ...
+}
+```
+### RDB 恢复数据的过程？
 
 
-不过 4.0 之后redis开始支持RDB和AOF的混合持久化，一般线上系统也是两种持久方式都开启，使用RDB快速恢复数据，然后再通过AOF恢复5分钟内丢失的数据等。
-
-数据如何恢复？
-
-- 如果是redis进程挂掉，那么重启redis进程即可，直接基于AOF文件恢复数据
-
-### RDB 如何fork子进程？
-
-### RDB 会将已经过期的数据持久化吗？
 
 ### AOF 持久化过程？
 
+### AOF 过期key如何处理？
+
+### 数据恢复过程？
+
+- 如果是redis进程挂掉，那么重启redis进程即可，直接基于AOF文件恢复数据
 
 # 数据库和缓存一致性问题是如何解决？
 
@@ -157,3 +264,5 @@ AOF 缺点：
 [文件事件](http://redisbook.com/preview/event/file_event.html)
 
 [Redis持久化机制：RDB和AOF](https://juejin.cn/post/6844903939339452430)
+
+[Redis专题：持久化方式之RDB](https://segmentfault.com/a/1190000039208707)

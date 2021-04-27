@@ -204,8 +204,6 @@ int rdbSave(char *filename, rdbSaveInfo *rsi) {
 
 如果我们不看代码，可能会猜测它不会将已经过期的key持久化，那么到底是不是这样呢？
 
-rdbSave方法会调用rdbSaveRio，这里会遍历数据库中的所有key，获取每个key的过期时间（如果有的话），通过rdbSaveKeyValuePair方法保存，然而在这个方法里面只是保存过期时间，并不会与当前时间比较（有些文章贴出了if (expiretime < now) return 0; 这样的判断，然而那是4.0以前的版本了），所以过期的key 也会被RDB记录下来吗？为什么要记录下来呢？，带着这样的疑问我到社区提出了问题，不过目前还没有人回复，后续跟进。
-
 ```
 // https://github.com/redis/redis/blob/6.2/src/rdb.c
 int rdbSaveRio(rio *rdb, int *error, int rdbflags, rdbSaveInfo *rsi) {
@@ -230,6 +228,25 @@ int rdbSaveKeyValuePair(rio *rdb, robj *key, robj *val, long long expiretime) {
     ...
 }
 ```
+rdbSave方法会调用rdbSaveRio，这里会遍历数据库中的所有key，获取每个key的过期时间（如果有的话），通过rdbSaveKeyValuePair方法保存，然而在这个方法里面只是保存过期时间，并不会与当前时间比较（有些文章贴出了if (expiretime < now) return 0; 这样的判断，然而那是4.0以前的版本了），所以过期的key 也会被RDB记录下来吗？为什么要记录下来呢？，带着这样的疑问，简单做一下测试：
+```
+# redis 版本 4.0.9
+# 设置键test002 1秒过期
+127.0.0.1:6379>  set test002 1 EX 1
+OK
+# 查询键值 不存在
+127.0.0.1:6379> get test002
+(nil)
+```
+用rdb分析工具(rdbtools)，发现文件里面实际上是有值的，这个测试并不太严谨，如果连续设置多个过期的key，会发现只有一部分会被保存下来
+```
+rdb --command json dump.rdb
+[{"test002":"1"}]
+```
+那么为什么要这么做呢？为什么要把已过期的key也持久化下来呢？
+
+> 这可能跟主从复制有关系，如果主从同步时使用的是rdb文件（这也跟同步策略有关系），如果主节点没有记录已过期的key，从节点同步的时候无法删除已过期的key，导致从库中一致存在这个key，这是个人的观点，具体原因我还在研究中。
+
 ### RDB 数据载入过程？
 RDB 功能最核心的是 rdbSave 和 rdbLoad 两个函数，前者用于持久化，上面已经介绍过，后者用于将 RDB 文件中的数据重新载入到内存中。话不多说，贴部分源码：
 

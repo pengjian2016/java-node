@@ -253,11 +253,18 @@ public class SimpleJpaRepository<T, ID> implements JpaRepositoryImplementation<T
 ```
 可以看到SimpleJpaRepository 其实已经实现了 基础的CRUD方法，不过其核心还是主要通过EntityManager em 来实现具体的逻辑
 
-而我们在接口中自定义的方法，如一开始中的例子，findByUsername 这种方法，在SimpleJpaRepository 代码里面是没有的，只是在生成SimpleJpaRepository 动态代理时添加上去了这个方法
+而我们在接口中自定义的方法，如一开始中的例子，findByUsername 这种方法，在SimpleJpaRepository 代码里面是没有的，只是在生成SimpleJpaRepository 动态代理时，在代理类上添加上去了这个方法
 
 ![输入图片说明](https://images.gitee.com/uploads/images/2021/0429/144118_6ab17ca4_8076629.png "屏幕截图.png")
  
-那么这个方法具体怎么使用的呢？即使在SimpleJpaRepository 有了该代理方法，但是也没有它的实现啊，那它又是如何调用的呢？
+上面说了一大堆，总结一下：
+
+- 在JPA的自动装配类中引入了JpaRepositoriesRegistrar 这个类，它会创建RepositoryConfigurationDelegate 代理
+- RepositoryConfigurationDelegate 代理类的registerRepositoriesIn方法中会扫描我们自定义的JpaRepositories，并为它们生成JpaRepositoryFactoryBean 对象
+- JpaRepositoryFactoryBean 对象实际上会生成SimpleJpaRepository  动态代理类，这个动态代理类包括我们在JPA中自定义的方法和SimpleJpaRepository  中实现的方法
+
+回到之前，我们自定义的方法虽然在代理类中生成了，但是也没有它的具体实现啊，那它又是如何调用并生效的呢？
+
 
 
 # jpa 如何将调用的方法翻译为sql语句的？

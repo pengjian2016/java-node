@@ -1,0 +1,1 @@
+# JPA 中只有save 方法，它是如何决定是insert 还是update的呢？

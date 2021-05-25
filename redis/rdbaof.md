@@ -83,7 +83,7 @@ save 60 10000  // 每分钟，至少发生10000次key的变动，会触发持久
 # 持久化文件名
 dbfilename dump.rdb
 ```
-以上是通过配置文件，间隔时间内自动触发的方式，当然我们也可以手动使用命令触发RDB持久化：
+大多数情况使用该默认配置即可，以上是通过配置文件，间隔时间内自动触发的方式，当然我们也可以手动使用命令触发RDB持久化：
 
 - save 命令，该命令是同步操作，会阻塞当前Redis服务器，执行save命令期间，Redis不能处理其他命令，直到RDB过程完成为止。（线上基本不会使用该命令）
 - bgsave 命令，异步操作，Redis fork 出一个新子进程，原来的 Redis 进程（父进程）继续处理客户端请求，而子进程则负责将数据保存到磁盘，然后退出。（上面配置文件中，也是使用的bgsave命令）
@@ -97,7 +97,7 @@ AOF（Append Only File ）持久化功能，它会把被执行的写命令(读�
 appendonly yes
 # aof持久化文件名称
 appendfilename "appendonly.aof"
-# 同步策略，always-每次有写命令，都会同步写入到磁盘，everysec-每秒执行一次同步，no-由操作系统来决定何时同步
+# 同步策略，always-每次有写命令，都会同步写入到磁盘，everysec-每秒执行一次同步(多数情况使用该配置)，no-由操作系统来决定何时同步
 # appendfsync always
 appendfsync everysec
 # appendfsync no

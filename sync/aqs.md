@@ -400,7 +400,7 @@ abstract static class Sync extends AbstractQueuedSynchronizer {
                 }
                 return 1;
             }
-            // 在上面的步骤获取失败的情况下，则会自旋尝试获取锁，知道明确的成功或是被，可以看到fullTryAcquireShared方法中的逻辑与上面的执行判断差不多
+            // 在上面的步骤获取失败的情况下，则会自旋尝试获取锁，直到明确的成功或失败，可以看到fullTryAcquireShared方法中的逻辑与上面的执行判断差不多
             return fullTryAcquireShared(current);
         }
 
@@ -651,7 +651,7 @@ JDK从1.5开始提供了AtomicStampedReference类来解决ABA问题，具体操�
 
 参考：[不可不说的Java“锁”事](https://tech.meituan.com/2018/11/15/java-lock.html)
 
-### 5. LockSupport.part(),Thread.sleep(),wait() 方法之间的区别
+### 5. LockSupport.park(),Thread.sleep(),wait() 方法之间的区别
 
 #### 5.1 Thread.sleep() 方法
 
@@ -661,9 +661,9 @@ Thread.sleep(time)方法必须传入指定的时间，线程将进入休眠状�
 
 该方法在Object中，每个类都有该方法，必须获得锁后，才可以执行该对象的wait方法。否则程序会在运行时抛出IllegalMonitorStateException异常，方法执行后线程进入休眠的同时，会释放持有的该对象的锁，这样其他线程就能在这期间获取到锁。此外只能通过notify()或者notifyAll()方法唤醒该线程，需要注意的是，notify()或者notifyAll()方法只能在wait()方法之后执行才能唤醒线程。
 
-#### 5.3 LockSupport.part() 
+#### 5.3 LockSupport.park() 
 
-LockSupport.part() 方法内部实现依赖与UNSAFE类，原理是通过二元信号量做的阻塞，要注意的是，这个信号量最多只能加到1。我们也可以理解成获取释放许可证的场景。unpark()方法会释放一个许可证，park()方法则是获取许可证。执行park进入休眠后并不会释放持有的锁，当外部线程对阻塞线程调用interrupt方法时，park阻塞的线程也会立刻返回。而且unpark()方法唤醒线程时可以在park()之前。
+LockSupport.park() 方法内部实现依赖与UNSAFE类，原理是通过二元信号量做的阻塞，要注意的是，这个信号量最多只能加到1。我们也可以理解成获取释放许可证的场景。unpark()方法会释放一个许可证，park()方法则是获取许可证。执行park进入休眠后并不会释放持有的锁，当外部线程对阻塞线程调用interrupt方法时，park阻塞的线程也会立刻返回。而且unpark()方法唤醒线程时可以在park()之前。
 
 参考:[Thread.sleep、Object.wait、LockSupport.park 区别](https://blog.csdn.net/u013332124/article/details/84647915)
 

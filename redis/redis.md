@@ -484,7 +484,7 @@ typedef struct dict {
     int16_t pauserehash; /* If >0 rehashing is paused (<0 indicates coding error) */
 } dict;
 ```
-dict 字典中维护了 dictht 结构的两个数组，而 dictht 中保存的是dictEntry 对象，dictEntry 内部又是一个链表结构
+dict 字典中维护了 dictht 结构的两个数组，而 dictht 中保存的是dictEntry 哈希数组，dictEntry 内部又是一个链表结构
 
 可以看到redis中的hashtable 与java中的1.7 之前的HashMap很相似，内部都是采用数组+链表的结构存储数据。哈希冲突时，采用链地址法（拉链法）解决冲突。
 

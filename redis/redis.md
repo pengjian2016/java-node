@@ -449,7 +449,7 @@ redis> HSET profile career "Programmer"
 
 ![输入图片说明](https://images.gitee.com/uploads/images/2021/0416/102200_c3f693c2_8076629.png "屏幕截图.png")
 
-以上是hash的ziplist实现方式，下面看一下hashtable的实现，首先看一下字典的结构定义：
+以上是hash的ziplist实现方式，图中的说明已经很清楚了，下面看一下hashtable的实现，首先看一下字典的结构定义：
 
 ```
 // https://github.com/redis/redis/blob/6.2/src/dict.h

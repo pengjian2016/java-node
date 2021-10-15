@@ -54,7 +54,7 @@
      - [单线程速度快的原因、持久化机制（RDB、AOF）](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/redis/rdbaof.md)
      - [过期时间TTL说明，内存淘汰机制（LRU，LFU）](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/redis/ttl.md)
      - [缓存穿透、缓存雪崩、缓存击穿，数据库和缓存一致性问题是如何解决？](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/redis/other.md)
-     - redis 分布式锁，锁的续期问题等（redisson）
+     - [redis 分布式锁，锁的续期问题等（redisson），各分布式锁对比](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/redis/lock.md)
      - 主从模式、哨兵模式、集群模式（cluster）
      
    - #### elasticsearch

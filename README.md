@@ -40,7 +40,7 @@
       - [springboot 内置容器Tomcat、Jetty、undertow、Reactor Netty](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/spring/properties.md)
    - #### jpa/hibernate/mybatis
      - [jpa 实现原理？如何将方法翻译为sql语句的？](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/spring/jpa.md)
-     - jpa save 方法如何识别是insert还是 update？
+     - [jpa save 方法如何识别是insert还是 update？](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/spring/jpasave.md)
      - hibernate
      - mybatis
    - #### 消息队列kafka，rocketMQ，rabbitmq

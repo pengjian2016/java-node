@@ -55,7 +55,7 @@
      - [过期时间TTL说明，内存淘汰机制（LRU，LFU）](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/redis/ttl.md)
      - [缓存穿透、缓存雪崩、缓存击穿，数据库和缓存一致性问题是如何解决？](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/redis/other.md)
      - [redis 分布式锁，锁的续期问题等（redisson），各分布式锁对比](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/redis/lock.md)
-     - 主从模式、哨兵模式、集群模式（cluster）
+     - [主从模式、哨兵模式、集群模式（cluster）](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/redis/cluster.md)
      
    - #### elasticsearch
      - 文档检索和写入过程，删除或更新过程

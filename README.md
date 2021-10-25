@@ -58,7 +58,7 @@
      - [主从模式、哨兵模式、集群模式（cluster）](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/redis/cluster.md)
      
    - #### elasticsearch
-     - 文档检索和写入过程，删除或更新过程
+     - [基础概念，文档搜索和写入过程，删除或更新过程](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/es/es.md)
      - 支持的类型，倒排序索引原理
      - 深度分页
      - 集群

@@ -60,9 +60,12 @@
    - #### elasticsearch
      - [基础概念，文档搜索和写入过程，删除或更新过程](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/es/es.md)
      - [支持的数据类型](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/es/type.md)
-     - 倒排序索引原理
+     - [倒排序索引原理](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/es/sort.md)
      - 深度分页
      - 集群
+   - ### clickhouse
+     - clickhouse 是什么？
+     - 数据库、elasticsearch、clickhouse 三种存储结构对比
 
 3. ### 数据库篇
    - #### 索引

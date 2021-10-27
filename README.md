@@ -61,7 +61,7 @@
      - [基础概念，文档搜索和写入过程，删除或更新过程](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/es/es.md)
      - [支持的数据类型](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/es/type.md)
      - [倒排序索引原理](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/es/sort.md)
-     - 深度分页
+     - [深度分页](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/es/page.md)
      - 集群
    - ### clickhouse
      - clickhouse 是什么？

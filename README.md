@@ -62,7 +62,7 @@
      - [支持的数据类型](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/es/type.md)
      - [倒排序索引原理](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/es/sort.md)
      - [深度分页](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/es/page.md)
-     - 集群
+     - [集群](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/es/cluster.md)
    - ### clickhouse
      - clickhouse 是什么？
      - 数据库、elasticsearch、clickhouse 三种存储结构对比

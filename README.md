@@ -68,16 +68,16 @@
      - 数据库、elasticsearch、clickhouse 三种存储结构对比
 
 3. ### 数据库篇
-   - #### 索引
-     - 索引结构，为什么是B+树，聚集索引，普通索引
-     - sql执行过程，sql优化，什么情况下索引会失效
+   - #### 基础
+     - [一条sql执行过程，redo log和undo log、做过哪些sql优化？](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/db/sql.md)
+     - 索引结构，为什么是B+树，聚集索引，普通索引，什么情况下索引会失效？
    - #### 事务隔离级别
      - 并发事务的问题（脏读、幻读、不可重复读）
      - 事务的隔离级别
      - mysql如何解决不可重复读
-   - 分库分表
    - 分布式事务
      - cap、base 理论，分布式事务解决方案等
+   - 分库分表方案
 
 4. ### 微服务
    - #### dubbo

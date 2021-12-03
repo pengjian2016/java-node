@@ -70,7 +70,7 @@
 3. ### 数据库篇
    - #### 基础
      - [一条sql执行过程，redo log和undo log、做过哪些sql优化？](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/db/sql.md)
-     - 索引结构，为什么使用的是B+树，聚集索引，普通索引，覆盖索引，最左前缀匹配原则，什么情况下索引会失效？
+     - [索引结构，为什么使用的是B+树，聚集索引，非聚集索引，覆盖索引，最左前缀匹配原则，什么情况下索引会失效？](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/db/index.md)
    - #### 事务隔离级别
      - 并发事务的问题（脏读、幻读、不可重复读）
      - 事务的隔离级别

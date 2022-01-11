@@ -54,7 +54,7 @@ XA一共分为两阶段：
 
 缺点：对资源进行了长时间的锁定，并发度低，它是一种尽量保证强一致性的分布式事务，因此它是同步阻塞的，而同步阻塞就导致长久的资源锁定问题，总体而言效率低
 
-目前主流的数据库基本都支持XA事务，包括mysql、oracle、sqlserver、postgre
+目前主流的数据库基本都支持XA事务，包括mysql、oracle、sqlserver、postgresql
 
 #### TCC方案
 

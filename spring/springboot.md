@@ -108,7 +108,9 @@ protected AutoConfigurationEntry getAutoConfigurationEntry(AnnotationMetadata an
 	Set<String> exclusions = getExclusions(annotationMetadata, attributes);
 	checkExcludedClasses(configurations, exclusions);
 	configurations.removeAll(exclusions);
-        // 对configurations进行过滤，剔除掉@Conditional条件不成立的配置类（比如某个配置可能需要某个特定的类，该类属于某个包，如果未引入包，则会过滤掉）
+        // 对configurations进行过滤，剔除掉ConditionalOnClass条件不成立的配置类
+        //（比如某个配置可能需要某个特定的类，该类属于某个包，如果未引入包，则会找不到这个类，所以这一项会过滤掉，
+        // 关于如何剔除这里其实还有更多的细节，比如会读取spring-autoconfigure-metadata.properties这个配置文件，这里面记录的是那些自动配置的类依赖的类文件等。）
 	configurations = getConfigurationClassFilter().filter(configurations);
 	fireAutoConfigurationImportEvents(configurations, exclusions);
 	return new AutoConfigurationEntry(configurations, exclusions);

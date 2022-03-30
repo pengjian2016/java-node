@@ -180,8 +180,6 @@ public class ServerProperties {
 
 ```
 
-限于篇幅，只摘抄了部分代码。
-
 可以看到Tomcat中，默认的最大线程数是200，最小是10，最大连接数8192
 
 连接数表示能接受最大多少个请求建立连接，而每个请求又必须要有对应的线程处理，最大线程数表示的是最大能同时处理多少个请求。
@@ -192,26 +190,27 @@ Undertow 需要自己指定io线程数（一般为 2 或者 CPU 的个数），�
 
 如何使用Netty替换其他web容器
 
-参考这边文章[SpringBoot项目中使用Netty替换Tomcat，Undertow等Web容器](https://www.jianshu.com/p/89403b1b314d)
+参考这篇文章[SpringBoot项目中使用Netty替换Tomcat，Undertow等Web容器](https://www.jianshu.com/p/89403b1b314d)
 
-Netty 的优点
+Netty 的优点：
 
 - 1 netty使用多路复用技术大幅提升性能
 - 2 减少web容器依赖，减少jar包体积
 - 3 灵活配置简单，适合所有需要提供restful接口的微服务应用
 - 4 完全按照springmvc的模式开发配置
 
-缺点：目前springboot配置中没有直接支持netty的相关配置，需要自己写代码实现
+缺点：
+ - 目前springboot配置中没有直接支持netty的相关配置，需要自己写代码实现
 
-还没能做到和spirng DispatcherServlet那么强大到支持各种规则的path配置
+ - 还没能做到和spirng DispatcherServlet那么强大到支持各种规则的path配置
 
 
 ### 那么Tomcat、Jetty、undertow、Reactor Netty这些容器的各自的优缺点以及适用场景是什么样的呢？
 
 | 容器                                  | 优点 | 缺点 | 适用场景 |
 |-------------------------------------|----|----|------|
-| Tomcat | 成熟稳定（毕竟这么多年的积累），使用更广泛，很多漏洞也已经暴露出来并被解决  | 高并发情况下，性能表现略差（实际跟undertow差距并发太大） | 大多数web应用  |
-| Jetty  |  与tomcat类似，比tomcat稍轻量，可扩展及易嵌入，性能方便二者差不多，tomcat处理短链接时性能较高，而jetty在处理长连接方面表现较好  | 处理短链接时性能没有tomcat强  |  云平台、分布式环境，Web聊天应用   |
+| Tomcat | 成熟稳定（毕竟这么多年的积累），使用更广泛，很多漏洞也已经暴露出来并被解决  | 高并发情况下，性能表现略差（实际跟undertow差距并非太大） | 大多数web应用  |
+| Jetty  |  与tomcat类似，比tomcat稍轻量，可扩展及易嵌入，性能方面二者差不多，tomcat处理短链接时性能较高，而jetty在处理长连接方面表现较好  | 处理短链接时性能没有tomcat强  |  云平台、分布式环境，Web聊天应用   |
 | undertow | 高性能 在多款同类产品的压测中，在高并发情况下表现出色，相比tomcat更加轻量级   | 学习资料相对较少 |   适合追求高并发的场景  |
 |Reactor Netty   | 多路复用技术大幅提升性能，并发场景性能最好 | 资料较少，而且springboot也没有在配置文件中有关它的直接配置，实现起来较复杂，只提供api接口服务，不提供web服务 | 高并发场景 |
 

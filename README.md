@@ -64,7 +64,7 @@
      - [深度分页](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/es/page.md)
      - [集群](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/es/cluster.md)
    - ### clickhouse
-     - clickhouse 是什么？
+     - [clickhouse 是什么？](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/clickhose/info.md)
      - 数据库、elasticsearch、clickhouse 三种存储结构对比
 
 3. ### 数据库篇

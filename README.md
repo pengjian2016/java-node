@@ -66,6 +66,9 @@
    - ### clickhouse
      - [clickhouse 是什么？](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/clickhose/info.md)
      - 数据库、elasticsearch、clickhouse 三种存储结构对比
+   - ### Nginx
+     - [Nginx 是什么？为什么要用Nginx？负载均衡策略有哪些？](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/other/nginx.md) 
+               
 
 3. ### 数据库篇
    - #### 基础

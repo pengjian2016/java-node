@@ -78,7 +78,7 @@
      - [并发事务的问题（脏读、幻读、不可重复读），事务的隔离级别（Read uncommitted，Read committed，Repeatable read，Serializable ），mysql如何解决不可重复读（MVCC多版本并发控制器）](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/db/qs.md)
    - 分布式事务
      - [cap、base 理论，分布式事务解决方案等](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/db/cap.md)
-   - 分库分表方案
+   - [分库分表](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/db/sharding.md)
 
 4. ### 微服务
    - #### dubbo

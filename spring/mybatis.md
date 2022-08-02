@@ -36,14 +36,41 @@ oracle中没有自增长主键，而是sequence序列，插入的时候需要把
 
 ```
 
-### MyBatis的工作原理是什么？
+### MyBatis的工作原理或流程是什么？
+![输入图片说明](../mybatis.png)
 
-### MyBatis有哪些执行器
+如上图，MyBatis主要有以下流程：
 
-### MyBatis支持懒加载吗？原理是什么？
+- 读取mybatis-config.xml 配置文件，主要是Mybatis 的运行环境等信息，例如数据库连接信息
+- 加载映射文件，即 SQL 映射文件，该文件中配置了操作数据库的 SQL 语句
+- 构造会话工厂SqlSessionFactory，该工程主要用于创建SqlSession
+- 创建会话对象SqlSession，由会话工厂创建 SqlSession 对象，主要用来执行SQL语句，该对象中包含了执行 SQL 语句的所有方法。
+- Executor 执行器，Mybatis 底层定义了一个 Executor 接口来操作数据库，它将根据 SqlSession 传递的参数动态地生成需要执行的 SQL 语句，同时负责查询缓存的维护
+- MappedStatement 对象，在 Executor 接口的执行方法中有一个 MappedStatement 类型的参数，该参数是对映射信息的封装，用于存储要映射的 SQL 语句的 id、参数等信息
+- 输入参数映射，输入参数类型可以是 Map、List 等集合类型，也可以是基本数据类型和 POJO 类型。输入参数映射过程类似于 JDBC 对 preparedStatement 对象设置参数的过程
+- 输出结果映射，输出结果类型可以是 Map、 List 等集合类型，也可以是基本数据类型和 POJO 类型。输出结果映射过程类似于 JDBC 对结果集的解析过程。
+
+
+### MyBatis默认执行器是什么？有哪些执行器？如何指定执行器？
+
+MyBatis 默认的执行器是SimpleExecutor
+
+Mybatis有三种基本的Executor执行器
+
+- SimpleExecutor 每执行一次update或select，就开启一个Statement对象，用完立刻关闭 Statement对象
+- ReuseExecutor 执行update或select，以sql作为key查找Statement对象，存在就使用， 不存在就创建，用完后，不关闭Statement对象，而是放置于Map<String, Statement>内， 供下一次使用。简言之，就是重复使用Statement对象
+- BatchExecutor 执行update（没有select，JDBC批处理不支持select），将所有sql都添加 到批处理中（addBatch()），等待统一执行（executeBatch()），它缓存了多个Statement 对象，每个Statement对象都是addBatch()完毕后，等待逐一执行executeBatch()批处理。 与JDBC批处理相同
+
+在Mybatis配置文件中，可以指定默认的ExecutorType执行器类型，也可以手动给DefaultSqlSessionFactory的创建SqlSession的方法传递ExecutorType类型参数
+
+
+### MyBatis支持懒加载（延迟加载）吗？原理是什么？
+
 
 
 
 参考
 
 https://www.zhihu.com/question/48910838
+
+https://www.jianshu.com/p/e3fa66277578

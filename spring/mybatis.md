@@ -66,6 +66,9 @@ Mybatis有三种基本的Executor执行器
 
 ### MyBatis支持懒加载（延迟加载）吗？原理是什么？
 
+原理是使用 CGLIB 或 Javassist( 默认 ) 创建目标对象的代理对象。当调用代理对象的延迟加载属性的 getting 方法时，进入拦截器方法。比如调用 a.getB().getName() 方法，进入拦截器的
+invoke(…) 方法，发现 a.getB() 需要延迟加载时，那么就会单独发送事先保存好的查询关联 B 对象的 SQL ，把 B 查询上来，然后调用 a.setB(b) 方法，于是 a 对象 b 属性就有值了，接着完成
+a.getB().getName() 方法的调用。这就是延迟加载的基本原理
 
 
 
@@ -74,3 +77,5 @@ Mybatis有三种基本的Executor执行器
 https://www.zhihu.com/question/48910838
 
 https://www.jianshu.com/p/e3fa66277578
+
+https://blog.csdn.net/yangxiaofei_java/article/details/111148980

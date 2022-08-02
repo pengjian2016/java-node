@@ -42,7 +42,7 @@
      - [jpa 实现原理？如何将方法翻译为sql语句的？](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/spring/jpa.md)
      - [jpa save 方法如何识别是insert还是 update？](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/spring/jpasave.md)
      - hibernate
-     - mybatis
+     - [mybatis](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/spring/mybatis.md)
    - #### 消息队列kafka，rocketMQ，rabbitmq
      - [消息顺序性如何保证、重复消息问题、消息丢失问题、消息堆积问题](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/mq/mq.md)
      - [kafka，rocketMQ，rabbitmq 集群](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/mq/info.md)

@@ -16,6 +16,7 @@
      
 
    - #### 集合模块
+      - [List与LinkedList](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/collection/List.md)
       - [HashMap与HashSet](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/collection/HashMap.md)
       - [LinkedHashMap 与 LinkedHashSet](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/collection/LinkedHashMap.md)
       - [TreeMap 和 TreeSet](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/collection/TreeMap.md)

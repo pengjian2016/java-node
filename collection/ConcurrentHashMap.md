@@ -150,6 +150,8 @@ public long mappingCount() {
 
 前面的问题我们知道它是个有序的链表，需要有序的操作时使用它效率更好，另一方面它能支持更高的并发，在一定数据量以下的情况它可能不如ConcurrentHashMap，但是随着数据越来越多并发情况越高的情况下，它的优势就比较明显了。
 
+关于 ConcurrentSkipListMap 的相关介绍，推荐看这篇文章 https://juejin.cn/post/6844903958499033095
+
 参考：
 [Java多线程（四）之ConcurrentSkipListMap深入分析](https://blog.csdn.net/iteye_1168/article/details/82536800)
 

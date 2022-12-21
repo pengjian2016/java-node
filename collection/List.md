@@ -116,6 +116,8 @@ ArrayList 默认容量是10，之后每次扩容的时候是原来的1.5倍。
         elementData[--size] = null; // clear to let GC do its work
     }
 ```
+总之：ArrayList插入和删除受位置的影响，同时插入的时候也受剩余容量的影响。
+
 ### LinkedList 
 
 ##### 1. LinkedList 是什么结构的？它需要扩容吗？描述一下插入过程？
@@ -166,6 +168,29 @@ void linkLast(E e) {
 }
 ```
 
+##### 2. LinkedList插入和删除一定是快的吗？
+
+并不一定，当在头或者尾插入和删除时，它的时间复杂度是O(1)，但是如果指定位置插入或删除时，则要先遍历到对应的位置，它的时间复杂度就变成了O(n)
+
+```
+    // 指定位置插入
+    public void add(int index, E element) {
+        checkPositionIndex(index);
+
+        if (index == size)
+            linkLast(element);
+        else
+            linkBefore(element, node(index));
+    }
+    // 指定位置删除
+    public E remove(int index) {
+        checkElementIndex(index);
+        return unlink(node(index));
+    }
+```
+
+总之：LinkedList 插入和删除也受位置的影响
+
 
 ### ArrayList 与 LinkedList 区别
 
@@ -177,4 +202,5 @@ void linkLast(E e) {
 
 4. 相同数量级的情况下，不考虑数组的剩余容量情况下，ArrayList占用内存要比LinkedList少很多，因为LinkedList中每个节点多存储了next和prev节点。
 
+5. 项目中很少使用LinkedList，使用LinkedList的场景基本都可以被ArrayList代替，毕竟连LinkedList的作者都说他从来不会用LinkedList。
 

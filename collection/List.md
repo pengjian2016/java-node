@@ -204,3 +204,131 @@ void linkLast(E e) {
 
 5. 项目中很少使用LinkedList，使用LinkedList的场景基本都可以被ArrayList代替，毕竟连LinkedList的作者都说他从来不会用LinkedList。
 
+
+### ArrayDeque
+
+ArrayDeque 从JDK 1.6开始有的，它是以数组方式实现的双端队列，双端队列即两端都可以插入和弹出元素的队列，它是非线程安全的。
+
+其内部的数据结构是：数组，加上head、tail两个指针。默认容量是16，每次扩容时为原来的2被，数组长度始终保持2的幂次方。
+
+```
+public class ArrayDeque<E> extends AbstractCollection<E>
+                           implements Deque<E>, Cloneable, Serializable
+{
+    transient Object[] elements; // non-private to simplify nested class access
+
+    transient int head;
+
+    transient int tail;
+    
+    public ArrayDeque() {
+        elements = new Object[16];
+    }
+}
+```
+
+ArrayDeque作为队列使用时的主要方法：
+
+```
+    // 添加元素到队列头
+    public void addFirst(E e) {
+        if (e == null)
+            throw new NullPointerException();
+        elements[head = (head - 1) & (elements.length - 1)] = e;
+        if (head == tail)
+            doubleCapacity();
+    }
+    // 添加元素到队列尾
+    public void addLast(E e) {
+        if (e == null)
+            throw new NullPointerException();
+        elements[tail] = e;
+        if ( (tail = (tail + 1) & (elements.length - 1)) == head)
+            doubleCapacity();
+    }
+    
+    // 从队列头出队
+    public E pollFirst() {
+        int h = head;
+        @SuppressWarnings("unchecked")
+        E result = (E) elements[h];
+        // Element is null if deque empty
+        if (result == null)
+            return null;
+        elements[h] = null;     // Must null out slot
+        head = (h + 1) & (elements.length - 1);
+        return result;
+    }
+
+    // 从队列尾出队
+    public E pollLast() {
+        int t = (tail - 1) & (elements.length - 1);
+        @SuppressWarnings("unchecked")
+        E result = (E) elements[t];
+        if (result == null)
+            return null;
+        elements[t] = null;
+        tail = t;
+        return result;
+    }
+    // 扩容
+    private void doubleCapacity() {
+        assert head == tail;
+        int p = head;
+        int n = elements.length;
+        int r = n - p; // number of elements to the right of p
+        int newCapacity = n << 1;
+        if (newCapacity < 0)
+            throw new IllegalStateException("Sorry, deque too big");
+        Object[] a = new Object[newCapacity];
+        System.arraycopy(elements, p, a, 0, r);
+        System.arraycopy(elements, 0, a, r, p);
+        elements = a;
+        head = 0;
+        tail = n;
+    }
+
+```
+
+入队和出队的方法有很多，这里主要分析，addFirst、addLast、pollFirst、pollLast这几个方法
+
+队列头入队过程描述(addFirst): 将head指针减1并与数组长度减1取模（防止溢出），在head位置插入元素，判断头和尾相等时进行扩容，新的容量扩为原来的两倍。
+
+队列尾入队过程描述(addLast): 将尾指针的位置插入元素，将尾指针加1，如果与头相等，则扩容。
+
+队列头出队过程描述(pollFirst)：取出head位置元素，将数组中该位置的元素设置为null，移动head指针+1。
+
+队列尾出队过程描述(pollLast)：计算尾指针-1的元素位置，取出该元素，将数组中该位置的元素设置为null，将尾指针-1。
+
+扩容过程：
+
+新的容量为原来的两倍，创建新的数组，用System.arraycopy复制两次到新的数组中去，第一次将head右边的元素复制到数组中去，第二次将head左边的元素复制到数组中去。
+
+
+ArrayDeque作为栈(后入先出)使用时的主要方法：
+
+```
+    public void push(E e) {
+        addFirst(e);
+    }
+
+    public E pop() {
+        return removeFirst();
+    }
+
+    public E removeFirst() {
+        E x = pollFirst();
+        if (x == null)
+            throw new NoSuchElementException();
+        return x;
+    }
+
+```
+可以看到push时主要用的是addFirst方法，而弹出时用的是removeFirst方法，而romveFirst方法内部用的是pollFirst方法，这里就不再过度介绍。
+
+
+
+
+参考
+
+https://zhuanlan.zhihu.com/p/64298684

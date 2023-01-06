@@ -10,7 +10,7 @@
  
 ### Http在哪一层？tcp/udp在哪一层？ip在哪一层？你还能说出哪些协议？
 
-以下图片来自[javaguide之OSI 和 TCP/IP 网络分层模型详解（基础）](https://javaguide.cn/cs-basics/network/osi&tcp-ip-model.html)，本人非常喜欢。
+以下图片来自[javaguide之OSI 和 TCP/IP 网络分层模型详解（基础）](https://javaguide.cn/cs-basics/network/osi&tcp-ip-model.html)，可以直观的看到每一层对应的协议。
 
 ![输入图片说明](image.png) 
 
@@ -21,6 +21,11 @@
 | 网络层 | ip                       |
 
 
+即http在应用层，tcp/udp在运输层（传输层），ip在网络层，各个层还有很多其他协议，有兴趣的可以研究一下，接下来主要针对Http，tcp/udp，ip进行深入研究。
+
+### TCP/UDP
+
+- TCP 的三次握手和四次挥手描述一下？
 
 
 参考：

@@ -22,7 +22,7 @@ location分为：
 
 正则location和普通location
 
-正则location：以 ~、~* 开头（带星号表示不区分大小写，不带星号区分大小写）
+正则location：以  ~、~* 开头（带星号表示不区分大小写，不带星号区分大小写）
 
 普通location：没有任何前缀(如 location /uri )、=、^~、@ 等除了上面两种之外的所有
 

@@ -128,10 +128,10 @@ TCP建立连接时，第一次握手后，服务端收到客户端的SYN，并�
 
 如何避免 SYN 攻击？
 
--调大 netdev_max_backlog；
--增大 TCP 半连接队列；
--开启 tcp_syncookies；
--减少 SYN+ACK 重传次数
+- 调大 netdev_max_backlog；
+- 增大 TCP 半连接队列；
+- 开启 tcp_syncookies；
+- 减少 SYN+ACK 重传次数
 
 具体如何做，感兴趣的可以参考：https://xiaolincoding.com/network/3_tcp/tcp_interview.html#%E4%BB%80%E4%B9%88%E6%98%AF-syn-%E6%94%BB%E5%87%BB-%E5%A6%82%E4%BD%95%E9%81%BF%E5%85%8D-syn-%E6%94%BB%E5%87%BB
 

@@ -96,9 +96,9 @@
    - 回文字符串判断
    - 公共子串
 6. ### 网络篇
-   - [网络七层结构，tcp头部报文格式，tcp三次握手四次挥手、udp解释、http、https等](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/http/http.md)
-   - tcp如何保证可靠性
-   - tcp粘包问题
+   - [网络七层结构，tcp头部报文格式、三次握手和四次挥手，udp协议，http和https协议等](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/http/http.md)
+   - tcp如何保证可靠性？tcp粘包问题？rpc和grpc等
+   - ip
 
 7. ### 其他
    - linux 常用命令

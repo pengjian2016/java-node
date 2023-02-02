@@ -98,3 +98,46 @@ tcpdump -XvvennSs 0 -i eth0 tcp[20:2]=0x4745 or tcp[20:2]=0x4854 -w /tmp/capture
 # 抓取 80 端口的包
 tcpdump port 80
 ```
+
+#### free 查看内存使用情况
+
+```
+$ free -h
+              total        used        free      shared  buff/cache   available
+Mem:            62G         43G        444M        962M         18G         17G
+Swap:            0B          0B          0B
+
+```
+
+#### df 查看磁盘使用情况
+
+```
+$ df -h
+Filesystem               Size  Used Avail Use% Mounted on
+devtmpfs                  32G     0   32G   0% /dev
+tmpfs                     32G   84K   32G   1% /dev/shm
+tmpfs                     32G  539M   31G   2% /run
+tmpfs                     32G     0   32G   0% /sys/fs/cgroup
+/dev/mapper/centos-root   50G   16G   35G  32% /
+
+```
+
+#### du 查看目录下文件的大小
+
+```
+$  du -hs ./*
+1.6G    ./logsgrep
+3.3M    ./other
+
+```
+
+#### ps 查看进程
+
+```
+# 查看tomcat进程
+ps -ef|grep tomcat
+
+```
+
+
+说实话 linux命令太多了，大多数都不需要特别去记住它如何使用的，只要在用的时候使用-help或man命令查看帮助即可。 

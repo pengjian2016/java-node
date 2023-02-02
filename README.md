@@ -100,7 +100,7 @@
    - [tcp如何保证可靠性？tcp粘包问题？](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/http/tcp.md)
 
 7. ### 其他
-   - linux 常用命令
+   - [linux 常用命令](https://gitee.com/javajov/java-senior-engineer-interview/blob/master/other/linux.md)
    - netty
    - IO模型
    - HBase

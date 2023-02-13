@@ -17,6 +17,10 @@
 | -XX:+HeapDumpOnOutOfMemoryError | 遇到OOM时打印堆内存快照 |
 | -XX:HeapDumpPath=/home/log | 快照保存的位置 |
 
+推荐堆大小（约为系统内存的70%，参考[阿里-JVM内存配置最佳实践](https://help.aliyun.com/document_detail/383255.html)）
+
+![输入图片说明](../1676256136851_703B448D-4835-45c9-9CFC-57626C2537A4.png)
+
 
 不同的垃圾回收器，适用于不同的场景。常用的垃圾回收器：
 
